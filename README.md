@@ -1,76 +1,125 @@
 # 🤖 RoboSim
 
-> محیط شبیه‌سازی مسابقات ربات — شرکت‌کنندگان «مغز» ربات‌ها را با برنامه‌نویسی می‌سازند تا در میدان نبرد با هم رقابت کنند.
+> A programming-competition simulation platform where players code the "brains" of robots in TypeScript to battle in a deterministic, tick-based 2D arena.
 
-RoboSim یک پلتفرم رقابت برنامه‌نویسی است که در آن بازیکنان هوش مصنوعی ربات‌های خود را نوشته و آن‌ها را در یک میدان نبرد دو‌بعدی (Top-down) و تیک‌محور به رقابت می‌گذارند.
-
----
-
-## 🎯 هدف پروژه
-
-ساخت یک پلتفرم آنلاین برای برگزاری مسابقات ربات‌های برنامه‌نویسی‌شونده، با قابلیت آپلود کد، اجرای مسابقه، ثبت باز پخش (Replay) و رتبه‌بندی.
+RoboSim is a programming-game platform inspired by games like Robocode, Battlecode, and Halite. This repository implements a robust, secure, and modern monorepo architecture featuring a high-performance simulation engine, secure user authentication, database persistence, and a premium cyber-cockpit user dashboard.
 
 ---
 
-## 🧱 ساختار پروژه
+## 🚀 Key Features
 
-این ریپو از معماری مونورپو (Monorepo) سبک پیروی می‌کند:
+*   **🎮 Deterministic 2D Battle Arena**: Physics, collisions, and gameplay elements are 100% deterministic (using a seeded PRNG), ensuring perfectly reproducible match replays.
+*   **🔒 Secure JWT Authentication**: Full signup, login, and session persistence using JSON Web Tokens (JWT) and hashed passwords (`bcryptjs`).
+*   **💾 Database Persistence**: Managed via Sequelize ORM with SQLite database integration.
+*   **🎨 Premium Cyber-Dashboard**: Fully responsive dark-themed dashboard utilizing glassmorphism cards, micro-animations, input validators, and real-time password strength checks.
+*   **🧩 Micro-Component Architecture**: Extremely modular and lightweight Vue 3 component structures built for performance and high maintainability.
+*   **🇮🇷 RTL & Farsi Ready**: Fully localized interface supporting Right-To-Left layouts and optimized local typography (Vazirmatn).
+
+---
+
+## 🧱 Monorepo Architecture
 
 ```
 RoboSim/
-├── frontend/   # رابط کاربری (Vue.js 3 + Vite + TypeScript)
-├── backend/    # سرور و API (Express.js + TypeScript)
-├── docs/       # مستندات معماری و طراحی
-└── README.md
-```
-
-| پوشه     | تکنولوژی                            | توضیح                                   |
-| -------- | ----------------------------------- | --------------------------------------- |
-| frontend | Vue 3, Vite, TypeScript             | نمایش میدان نبرد، کنترل مسابقه، ادیتور کد |
-| backend  | Express.js, TypeScript              | API، مدیریت ربات‌ها، اجرای مسابقه        |
-| docs     | Markdown                            | مستندات طراحی و معماری                  |
-
----
-
-## 🚀 شروع سریع
-
-### پیش‌نیازها
-- [Node.js](https://nodejs.org/) نسخه‌ی ۱۸ یا بالاتر
-- [npm](https://www.npmjs.com/)
-
-### اجرای Backend
-```bash
-cd backend
-npm install
-npm run dev      # سرور روی http://localhost:3000
-```
-
-### اجرای Frontend
-```bash
-cd frontend
-npm install
-npm run dev      # رابط کاربری روی http://localhost:5173
+├── frontend/                  # Responsive SPA Client (Vue 3 + Vite + TypeScript)
+│   ├── public/
+│   │   └── favicon.svg        # Custom robot favicon logo
+│   ├── src/
+│   │   ├── assets/
+│   │   │   └── auth-theme.css # CSS variables, animations, glassmorphism design system
+│   │   ├── components/        # Micro-components (BaseInput, BaseButton, GlassCard, etc.)
+│   │   ├── router/            # Vue Router config with authentication guards
+│   │   ├── utils/             # Reactive session and token store managers
+│   │   ├── views/             # Core pages (Login, Register, Dashboard)
+│   │   ├── App.vue            # Entry component restoring sessions
+│   │   └── main.ts            # Bootstraps router, local fonts, and CSS
+│   └── index.html
+│
+├── backend/                   # RESTful API Server (Express.js 5 + TypeScript + SQLite)
+│   ├── src/
+│   │   ├── db.ts              # Sequelize connection configurations
+│   │   ├── index.ts           # App bootstrapper and route bindings
+│   │   ├── middleware/        # JWT auth verification middleware
+│   │   ├── models/            # Database schema definitions (User model)
+│   │   └── routes/            # REST endpoint routers (register, login, me)
+│   ├── .env.example           # Shared environment configurations
+│   └── package.json
+│
+├── docs/                      # Platform Architecture & API Guidelines
+│   ├── architecture.md        # Technical roadmap and architecture goals (Farsi)
+│   └── auth-system.md         # Detailed API specification & DB models (English)
+│
+└── README.md                  # Root documentation (English)
 ```
 
 ---
 
-## 📚 مستندات
+## 🛠️ Getting Started
 
-برای آشنایی با طراحی و معماری، به پوشه‌ی [`docs/`](./docs) مراجعه کنید.
+### Prerequisites
+- [Node.js](https://nodejs.org/) v18 or higher
+- [npm](https://www.npmjs.com/) v9 or higher
+
+### 1. Setup Backend
+1. Navigate to the backend directory:
+   ```bash
+   cd backend
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Create your `.env` configuration:
+   ```bash
+   cp .env.example .env
+   ```
+4. Start the development server:
+   ```bash
+   npm run dev
+   ```
+   *The server runs locally at `http://localhost:3000` and creates the `database.sqlite` file automatically.*
+
+### 2. Setup Frontend
+1. Navigate to the frontend directory:
+   ```bash
+   cd frontend
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Start the Vite development server:
+   ```bash
+   npm run dev
+   ```
+   *The client dashboard opens locally at `http://localhost:5173`.*
 
 ---
 
-## 🗺 نقشه‌ی راه (Roadmap)
+## 📡 API Reference
 
-- [x] راه‌اندازی ساختار اولیه پروژه (Scaffold)
-- [ ] طراحی و پیاده‌سازی موتور شبیه‌سازی (sim-core)
-- [ ] API مدیریت ربات‌ها و مسابقات
-- [ ] رابط کاربری نمایش میدان نبرد
-- [ ] سیستم اجرای مسابقه و ثبت باز‌پخش
-- [ ] رتبه‌بندی و Matchmaking آنلاین
+Below is a summary of the core authentication endpoints. For detailed payload schema and example payloads, refer to [docs/auth-system.md](./docs/auth-system.md).
+
+| Method | Endpoint | Authorization | Description |
+| :--- | :--- | :--- | :--- |
+| `POST` | `/api/auth/register` | Public | Validates user information, hashes password, and creates account. Returns JWT. |
+| `POST` | `/api/auth/login` | Public | Authenticates credentials and returns JWT. |
+| `GET` | `/api/auth/me` | JWT Token | Validates current token and returns authenticated commander profile info. |
+| `GET` | `/api/health` | Public | Returns server health and timestamps. |
 
 ---
 
-## 📄 لایسنس
+## 🗺️ Project Roadmap
 
-این پروژه اختصاصی است. © 2026
+- [x] **Phase 1**: Initial Scaffold (Monorepo setup, Local Farsi fonts, health APIs)
+- [x] **Phase 2**: Authentication & Cyber-Dashboard (Sequelize/SQLite, JWT, Micro-componentized Vue 3 views)
+- [ ] **Phase 3**: Simulation Engine Core (`sim-core` logic, discrete tick loop, physics, PRNG seeders)
+- [ ] **Phase 4**: Code Sandbox & Worker (Secure script environment for TS robot brains)
+- [ ] **Phase 5**: Canvas Renderer (Real-time 2D top-down battlefield render on Frontend)
+- [ ] **Phase 6**: Replays, Battle Matchmaking, and Global Leaderboards
+
+---
+
+## 📄 License
+
+Proprietary platform. © 2026 RoboSim Team. All rights reserved.
