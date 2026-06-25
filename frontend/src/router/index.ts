@@ -36,7 +36,7 @@ const router = createRouter({
 });
 
 // Navigation Guard
-router.beforeEach(async (to, from, next) => {
+router.beforeEach(async (to, _from, next) => {
   const auth = useAuth();
   
   // If user is opening page, restore their session once before guarding
