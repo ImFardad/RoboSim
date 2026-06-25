@@ -1,6 +1,6 @@
-# RoboSim - Authentication System Documentation
+# RoboSim - Authentication & Profile System Documentation
 
-This document specifies the database schemas, API endpoints, security implementations, and frontend integration details for the RoboSim Authentication System.
+This document specifies the database schemas, API endpoints, security implementations, and frontend integration details for the RoboSim Authentication and Profile System.
 
 ---
 
@@ -18,6 +18,7 @@ This model represents a registered user (commander) in the system.
 | `username` | `STRING` | Unique, Not Null, Indexed | Alphanumeric only, lowercase, length: 3-30. |
 | `email` | `STRING` | Unique, Not Null, Indexed | Validated email address format, lowercase. |
 | `passwordHash` | `STRING` | Not Null | Password hashed using bcrypt (10 rounds). |
+| `avatarId` | `INTEGER` | Not Null, Default: Random (1-10) | ID of the selected origami robot profile picture. |
 | `createdAt` | `DATE` | Not Null | Automatically generated creation date. |
 | `updatedAt` | `DATE` | Not Null | Automatically generated last update date. |
 
@@ -25,6 +26,7 @@ This model represents a registered user (commander) in the system.
 Before validation and saving to the database, hook functions perform the following normalizations:
 *   `email`: Trimmed of leading/trailing spaces and converted to lowercase.
 *   `username`: Trimmed of leading/trailing spaces and converted to lowercase.
+*   `avatarId`: If not specified, a random integer between 1 and 10 is automatically assigned during user creation.
 
 ---
 
@@ -33,7 +35,7 @@ Before validation and saving to the database, hook functions perform the followi
 All endpoints are hosted under the `/api/auth` namespace.
 
 ### A. User Registration
-Creates a new user account, performs input validation, hashes the password, and issues a JWT token.
+Creates a new user account, performs input validation, hashes the password, automatically assigns a random origami robot avatar, and issues a JWT token.
 
 *   **URL**: `/api/auth/register`
 *   **Method**: `POST`
@@ -47,7 +49,7 @@ Creates a new user account, performs input validation, hashes the password, and 
     }
     ```
 *   **Response Codes**:
-    *   `201 Created` - Registration successful. Returns user info and authentication token.
+    *   `201 Created` - Registration successful. Returns user info, auto-assigned `avatarId`, and authentication token.
     *   `400 Bad Request` - Missing fields, invalid format, or username/email already exists.
     *   `500 Internal Server Error` - Database or execution failure.
 *   **Success Response Payload (`201 Created`)**:
@@ -59,6 +61,7 @@ Creates a new user account, performs input validation, hashes the password, and 
         "id": "e4b9da88-d621-4f05-8bb0-d7b1a20723a1",
         "username": "fardad",
         "email": "fardad@example.com",
+        "avatarId": 4,
         "createdAt": "2026-06-26T01:45:00.000Z"
       }
     }
@@ -87,7 +90,7 @@ Authenticates user credentials and issues a JWT token.
     ```
     *(Note: `emailOrUsername` matches both `email` and `username` columns)*.
 *   **Response Codes**:
-    *   `200 OK` - Login successful. Returns user info and token.
+    *   `200 OK` - Login successful. Returns user info, profile `avatarId`, and token.
     *   `400 Bad Request` - Missing required login credentials.
     *   `401 Unauthorized` - Invalid username/email or password (generic message for security).
     *   `500 Internal Server Error` - Database or execution failure.
@@ -100,14 +103,9 @@ Authenticates user credentials and issues a JWT token.
         "id": "e4b9da88-d621-4f05-8bb0-d7b1a20723a1",
         "username": "fardad",
         "email": "fardad@example.com",
+        "avatarId": 4,
         "createdAt": "2026-06-26T01:45:00.000Z"
       }
-    }
-    ```
-*   **Error Response Payload Example (`401 Unauthorized`)**:
-    ```json
-    {
-      "error": "Invalid username/email or password."
     }
     ```
 
@@ -121,7 +119,7 @@ Retrieves the logged-in user profile details by validating their JWT token.
 *   **Headers**: 
     *   `Authorization: Bearer <jwt_token>`
 *   **Response Codes**:
-    *   `200 OK` - Token validated, returns user details.
+    *   `200 OK` - Token validated, returns user details and current `avatarId`.
     *   `401 Unauthorized` - Token missing, expired, or invalid.
 *   **Success Response Payload (`200 OK`)**:
     ```json
@@ -130,8 +128,38 @@ Retrieves the logged-in user profile details by validating their JWT token.
         "id": "e4b9da88-d621-4f05-8bb0-d7b1a20723a1",
         "username": "fardad",
         "email": "fardad@example.com",
+        "avatarId": 4,
         "createdAt": "2026-06-26T01:45:00.000Z"
       }
+    }
+    ```
+
+---
+
+### D. Update User Avatar
+Allows an authenticated user to change their profile picture from the 10 available origami robot designs.
+
+*   **URL**: `/api/auth/avatar`
+*   **Method**: `PATCH`
+*   **Headers**:
+    *   `Authorization: Bearer <jwt_token>`
+    *   `Content-Type: application/json`
+*   **Request Body**:
+    ```json
+    {
+      "avatarId": 6
+    }
+    ```
+*   **Response Codes**:
+    *   `200 OK` - Avatar updated successfully. Returns the new `avatarId`.
+    *   `400 Bad Request` - Invalid selection (must be an integer between 1 and 10).
+    *   `401 Unauthorized` - Token missing, expired, or invalid.
+    *   `500 Internal Server Error` - Database or execution failure.
+*   **Success Response Payload (`200 OK`)**:
+    ```json
+    {
+      "message": "Avatar updated successfully.",
+      "avatarId": 6
     }
     ```
 
@@ -148,17 +176,15 @@ Retrieves the logged-in user profile details by validating their JWT token.
 
 ---
 
-## 4. Frontend Routing & Navigation Guards
+## 4. Frontend Integration & Layout
 
-### Client Route Configuration
+### Routing & Navigation Guards
 *   `/login` (guest-only): Accessible only when logged out. Redirects to `/dashboard` if logged in.
 *   `/register` (guest-only): Accessible only when logged out. Redirects to `/dashboard` if logged in.
 *   `/dashboard` (authenticated-only): Requires a valid JWT token. Redirects to `/login` if token is missing.
 
-### State & Storage Management
-*   **Token Persistence**: Upon login or registration, the JWT is stored in `localStorage` as `auth_token`.
-*   **Session Hydration**: On application mount, if `auth_token` exists, the frontend immediately requests `/api/auth/me` to download the profile data. If the token is invalid or expired, it clears `localStorage` and redirects the user to the login screen.
-*   **Request Interceptor**: For authenticated requests, the Authorization header is automatically formatted as:
-    ```
-    Authorization: Bearer <token_value>
-    ```
+### Localizations & Glossary File
+All user-facing hardcoded text strings (like site names, titles, labels, placeholders) are extracted to `frontend/src/glossary.ts`. Templates fetch text from this configuration dictionary, allowing easy customization and language updates. By default, the application is presented in **English** and uses Left-to-Right (**LTR**) layout rules.
+
+### Toast Notification System
+The application features a global Toast Notification System managed via `frontend/src/utils/toast.ts`. Success, info, and validation error messages originating from the backend API responses are caught and displayed dynamically as top-right floating glassmorphic alerts instead of inline component warnings.
