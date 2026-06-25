@@ -40,24 +40,24 @@ export const GLOSSARY = {
   dashboardSubtitle: 'Welcome to RoboSim command center. Deploy scripts and coordinate battles.',
   welcomeCommander: 'Welcome, ',
   logoutBtn: 'Disconnect Session',
-  profileCardTitle: '👤 Commander Profile',
+  profileCardTitle: 'Commander Profile',
   profileCardDesc: 'Verified identity credentials within the RoboSim network.',
   profileUsernameLabel: 'Username',
   profileEmailLabel: 'Email Address',
   profileJoinedLabel: 'Session Enrolled',
   profileIdLabel: 'Identity Signature',
   
-  arenaCardTitle: '⚔️ Enter Battle Arena',
+  arenaCardTitle: 'Enter Battle Arena',
   arenaCardDesc: 'Deploy your robots in deterministic, tick-based 2D robotic warfare against other players.',
   arenaCardBtn: 'Launch Battle Grid',
   arenaFeatureAlert: 'Battle Grid is offline. Launch scheduled in next development phases.',
   
-  robotsCardTitle: '🤖 Brain Laboratory',
+  robotsCardTitle: 'Brain Laboratory',
   robotsCardDesc: 'Write, debug, and upload TypeScript scripts controlling your robot decision processors.',
   robotsCardBtn: 'Open Lab Editor',
   robotsFeatureAlert: 'Lab Editor is offline. Interface under construction.',
   
-  historyCardTitle: '🎥 Match Archival Replays',
+  historyCardTitle: 'Match Archival Replays',
   historyCardDesc: 'Analyze historical battle logs step-by-step. Debug and optimize robot performance.',
   historyCardBtn: 'Query Archives',
   historyFeatureAlert: 'Replay query interface is offline. Archival system scheduled in next phases.'

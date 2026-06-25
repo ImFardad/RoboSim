@@ -5,6 +5,7 @@ export interface UserProfile {
   id: string;
   username: string;
   email: string;
+  avatarId: number;
   createdAt: string;
 }
 
@@ -126,6 +127,38 @@ async function register(username: string, email: string, password: string): Prom
   }
 }
 
+// Change user avatar
+async function changeAvatar(avatarId: number): Promise<boolean> {
+  isLoading.value = true;
+  authError.value = null;
+
+  try {
+    const res = await fetch(`${API_BASE}/auth/avatar`, {
+      method: 'PATCH',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ avatarId }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || 'Failed to update avatar.');
+    }
+
+    if (user.value) {
+      user.value.avatarId = data.avatarId;
+    }
+    showSuccess(data.message || 'Avatar updated successfully.');
+    return true;
+  } catch (err: any) {
+    const errMsg = err.message || 'An error occurred updating avatar.';
+    showError(errMsg);
+    return false;
+  } finally {
+    isLoading.value = false;
+  }
+}
+
 // Log out user
 function logout() {
   token.value = null;
@@ -145,6 +178,7 @@ export function useAuth() {
     login,
     register,
     logout,
+    changeAvatar,
     getAuthHeaders,
   };
 }
