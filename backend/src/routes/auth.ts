@@ -78,6 +78,7 @@ router.post('/register', async (req, res): Promise<void> => {
         id: newUser.id,
         username: newUser.username,
         email: newUser.email,
+        avatarId: newUser.avatarId,
         createdAt: newUser.createdAt
       }
     });
@@ -136,6 +137,7 @@ router.post('/login', async (req, res): Promise<void> => {
         id: user.id,
         username: user.username,
         email: user.email,
+        avatarId: user.avatarId,
         createdAt: user.createdAt
       }
     });
@@ -158,9 +160,38 @@ router.get('/me', authMiddleware, async (req: AuthRequest, res: Response): Promi
       id: user.id,
       username: user.username,
       email: user.email,
+      avatarId: user.avatarId,
       createdAt: user.createdAt
     }
   });
+});
+
+// PATCH /api/auth/avatar
+router.patch('/avatar', authMiddleware, async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    const { avatarId } = req.body;
+    if (avatarId === undefined || typeof avatarId !== 'number' || avatarId < 1 || avatarId > 10) {
+      res.status(400).json({ error: 'Invalid avatar selection (Must be 1-10).' });
+      return;
+    }
+
+    const user = req.user;
+    if (!user) {
+      res.status(401).json({ error: 'Unauthorized.' });
+      return;
+    }
+
+    user.avatarId = avatarId;
+    await user.save();
+
+    res.status(200).json({
+      message: 'Avatar updated successfully.',
+      avatarId: user.avatarId,
+    });
+  } catch (error) {
+    console.error('Error updating avatar:', error);
+    res.status(500).json({ error: 'An internal server error occurred.' });
+  }
 });
 
 export default router;

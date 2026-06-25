@@ -9,7 +9,7 @@ const dbPath = process.env.DB_STORAGE || path.join(process.cwd(), 'database.sqli
 export const sequelize = new Sequelize({
   dialect: 'sqlite',
   storage: dbPath,
-  logging: process.env.NODE_ENV === 'development' ? console.log : false,
+  logging: false,
   define: {
     timestamps: true, // Automatically add createdAt and updatedAt
   },

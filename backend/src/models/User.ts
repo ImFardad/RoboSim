@@ -6,18 +6,20 @@ interface UserAttributes {
   username: string;
   email: string;
   passwordHash: string;
+  avatarId: number;
   createdAt?: Date;
   updatedAt?: Date;
 }
 
 // Some attributes are optional when calling User.create()
-export type UserCreationAttributes = Optional<UserAttributes, 'id'>;
+export type UserCreationAttributes = Optional<UserAttributes, 'id' | 'avatarId'>;
 
 export class User extends Model<UserAttributes, UserCreationAttributes> implements UserAttributes {
   declare id: string;
   declare username: string;
   declare email: string;
   declare passwordHash: string;
+  declare avatarId: number;
 
   // Timestamps
   declare readonly createdAt: Date;
@@ -53,6 +55,11 @@ User.init(
     passwordHash: {
       type: DataTypes.STRING,
       allowNull: false,
+    },
+    avatarId: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      defaultValue: () => Math.floor(Math.random() * 10) + 1,
     },
   },
   {
