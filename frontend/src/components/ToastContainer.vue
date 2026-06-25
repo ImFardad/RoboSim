@@ -139,4 +139,17 @@ const { toasts, removeToast } = useToast();
   position: absolute;
   width: 100%;
 }
+
+@media (max-width: 480px) {
+  .toast-container {
+    top: 16px;
+    right: 16px;
+    left: 16px;
+    width: auto;
+    max-width: none;
+  }
+  .toast-slide-enter-from {
+    transform: translateY(-20px) scale(0.95);
+  }
+}
 </style>
