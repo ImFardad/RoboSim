@@ -3,33 +3,33 @@
     <!-- Navbar -->
     <header class="dashboard-nav">
       <div class="nav-brand">
-        🤖 <span>RoboSim Cockpit</span>
+        🤖 <span>{{ GLOSSARY.appName }} Cockpit</span>
       </div>
       <div class="nav-user" v-if="user">
-        <span class="user-badge">سلام، {{ user.username }}</span>
-        <button @click="handleLogout" class="logout-btn">خروج از حساب</button>
+        <span class="user-badge">{{ GLOSSARY.welcomeCommander }}{{ user.username }}</span>
+        <button @click="handleLogout" class="logout-btn">{{ GLOSSARY.logoutBtn }}</button>
       </div>
     </header>
 
     <!-- Main Dashboard Area -->
     <main class="dashboard-content" v-if="user">
       <div class="dashboard-header">
-        <h1>داشبورد فرماندهی ربات‌ها</h1>
-        <p>به RoboSim خوش آمدید. کدهای خود را بارگذاری کنید و ربات‌ها را به میدان نبرد بفرستید.</p>
+        <h1>{{ GLOSSARY.dashboardTitle }}</h1>
+        <p>{{ GLOSSARY.dashboardSubtitle }}</p>
       </div>
 
       <div class="dashboard-grid">
         <!-- Profile details -->
         <section class="grid-card">
-          <h3>👤 مشخصات فرمانده</h3>
-          <p>اطلاعات کاربری شما در سیستم شبیه‌سازی RoboSim.</p>
+          <h3>{{ GLOSSARY.profileCardTitle }}</h3>
+          <p>{{ GLOSSARY.profileCardDesc }}</p>
           <div class="profile-details">
-            <ProfileRow label="نام کاربری" :value="user.username" />
-            <ProfileRow label="آدرس ایمیل" :value="user.email" />
-            <ProfileRow label="تاریخ عضویت" :value="formatDate(user.createdAt)" />
+            <ProfileRow :label="GLOSSARY.profileUsernameLabel" :value="user.username || ''" />
+            <ProfileRow :label="GLOSSARY.profileEmailLabel" :value="user.email || ''" />
+            <ProfileRow :label="GLOSSARY.profileJoinedLabel" :value="formatDate(user.createdAt)" />
             <ProfileRow 
-              label="شناسه کاربر" 
-              :value="user.id" 
+              :label="GLOSSARY.profileIdLabel" 
+              :value="user.id || ''" 
               :valueStyle="{
                 fontFamily: 'monospace',
                 fontSize: '0.8rem',
@@ -44,26 +44,26 @@
 
         <!-- Arena card -->
         <DashboardCard
-          title="⚔️ ورود به میدان نبرد (Arena)"
-          desc="ربات‌های خود را در مبارزات تیک‌محور دو‌بعدی در مقابل بقیه برنامه‌نویسان به چالش بکشید."
-          actionText="ورود به بخش مسابقات"
-          @action="showFeatureAlert('میدان نبرد در فازهای بعدی راه‌اندازی خواهد شد.')"
+          :title="GLOSSARY.arenaCardTitle"
+          :desc="GLOSSARY.arenaCardDesc"
+          :actionText="GLOSSARY.arenaCardBtn"
+          @action="showFeatureAlert(GLOSSARY.arenaFeatureAlert)"
         />
 
         <!-- Robots management card -->
         <DashboardCard
-          title="🤖 مدیریت ربات‌ها"
-          desc="مغز (کد TypeScript) ربات‌های خود را بنویسید، آپلود کنید و برای نبردها آماده‌سازی کنید."
-          actionText="مدیریت کدهای ربات‌ها"
-          @action="showFeatureAlert('ادیتور کد و مدیریت ربات‌ها در حال توسعه است.')"
+          :title="GLOSSARY.robotsCardTitle"
+          :desc="GLOSSARY.robotsCardDesc"
+          :actionText="GLOSSARY.robotsCardBtn"
+          @action="showFeatureAlert(GLOSSARY.robotsFeatureAlert)"
         />
 
         <!-- History card -->
         <DashboardCard
-          title="🎥 تاریخچه نبردها و Replays"
-          desc="بازپخش تمام مسابقات قطعی گذشته را تماشا کنید، مشکلات ربات خود را دیباگ و اصلاح کنید."
-          actionText="مشاهده آرشیو مسابقات"
-          @action="showFeatureAlert('سیستم ثبت بازپخش مسابقات در فازهای بعدی فعال می‌شود.')"
+          :title="GLOSSARY.historyCardTitle"
+          :desc="GLOSSARY.historyCardDesc"
+          :actionText="GLOSSARY.historyCardBtn"
+          @action="showFeatureAlert(GLOSSARY.historyFeatureAlert)"
         />
       </div>
     </main>
@@ -73,6 +73,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router';
 import { useAuth } from '../utils/auth';
+import { GLOSSARY } from '../glossary';
 import ProfileRow from '../components/ProfileRow.vue';
 import DashboardCard from '../components/DashboardCard.vue';
 
@@ -87,7 +88,7 @@ function handleLogout() {
 function formatDate(dateStr: string): string {
   if (!dateStr) return '';
   const date = new Date(dateStr);
-  return date.toLocaleDateString('fa-IR', {
+  return date.toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
     day: 'numeric',

@@ -1,39 +1,37 @@
 <template>
   <div class="auth-wrapper">
     <GlassCard>
-      <h2 class="auth-title">عضویت در RoboSim</h2>
-      <p class="auth-subtitle">حساب کاربری خود را بسازید و نبرد ربات‌ها را شروع کنید</p>
-
-      <BaseAlert type="danger" :message="authError" />
+      <h2 class="auth-title">{{ GLOSSARY.registerTitle }}</h2>
+      <p class="auth-subtitle">{{ GLOSSARY.registerSubtitle }}</p>
 
       <form @submit.prevent="handleRegister">
         <BaseInput
           id="username"
           v-model="username"
-          label="نام کاربری"
-          placeholder="مثال: fardad (فقط حروف و اعداد)"
+          :label="GLOSSARY.usernameLabel"
+          :placeholder="GLOSSARY.usernamePlaceholder"
           required
           :disabled="isLoading"
-          :errorMsg="username && !isUsernameValid ? 'نام کاربری باید فقط شامل حروف و اعداد انگلیسی باشد (بین ۳ تا ۳۰ کاراکتر).' : ''"
+          :errorMsg="username && !isUsernameValid ? GLOSSARY.usernameValidationMsg : ''"
         />
 
         <BaseInput
           id="email"
           v-model="email"
           type="email"
-          label="ایمیل"
-          placeholder="fardad@example.com"
+          :label="GLOSSARY.emailLabel"
+          :placeholder="GLOSSARY.emailPlaceholder"
           required
           :disabled="isLoading"
-          :errorMsg="email && !isEmailValid ? 'لطفاً یک ایمیل معتبر وارد کنید.' : ''"
+          :errorMsg="email && !isEmailValid ? GLOSSARY.emailValidationMsg : ''"
         />
 
         <BaseInput
           id="password"
           v-model="password"
           type="password"
-          label="رمز عبور"
-          placeholder="•••••••• (حداقل ۶ کاراکتر)"
+          :label="GLOSSARY.passwordLabel"
+          :placeholder="GLOSSARY.passwordPlaceholder"
           required
           :disabled="isLoading"
         />
@@ -52,24 +50,24 @@
           id="confirmPassword"
           v-model="confirmPassword"
           type="password"
-          label="تکرار رمز عبور"
-          placeholder="••••••••"
+          :label="GLOSSARY.confirmPasswordLabel"
+          :placeholder="GLOSSARY.confirmPasswordPlaceholder"
           required
           :disabled="isLoading"
-          :errorMsg="confirmPassword && !isPasswordMatch ? 'تکرار رمز عبور مطابقت ندارد.' : ''"
+          :errorMsg="confirmPassword && !isPasswordMatch ? GLOSSARY.confirmPasswordValidationMsg : ''"
         />
 
         <BaseButton
-          text="ایجاد حساب کاربری"
-          loadingText="در حال ثبت‌نام..."
+          :text="GLOSSARY.registerButtonText"
+          :loadingText="GLOSSARY.registerButtonLoadingText"
           :isLoading="isLoading"
           :disabled="!isFormValid"
         />
       </form>
 
       <div class="auth-footer">
-        <span>قبلاً ثبت‌نام کرده‌اید؟</span>
-        <router-link to="/login" class="auth-link">ورود به حساب</router-link>
+        <span>{{ GLOSSARY.hasAccountText }}</span>
+        <router-link to="/login" class="auth-link">{{ GLOSSARY.loginLinkText }}</router-link>
       </div>
     </GlassCard>
   </div>
@@ -79,10 +77,10 @@
 import { ref, computed } from 'vue';
 import { useRouter } from 'vue-router';
 import { useAuth } from '../utils/auth';
+import { GLOSSARY } from '../glossary';
 import GlassCard from '../components/GlassCard.vue';
 import BaseInput from '../components/BaseInput.vue';
 import BaseButton from '../components/BaseButton.vue';
-import BaseAlert from '../components/BaseAlert.vue';
 
 const username = ref('');
 const email = ref('');
@@ -90,7 +88,7 @@ const password = ref('');
 const confirmPassword = ref('');
 
 const router = useRouter();
-const { register, isLoading, authError } = useAuth();
+const { register, isLoading } = useAuth();
 
 // Input Validations
 const isUsernameValid = computed(() => {
@@ -130,10 +128,10 @@ const strengthColor = computed(() => {
 const strengthText = computed(() => {
   const pct = strengthPercent.value;
   if (pct === 0) return '';
-  if (pct < 30) return 'ضعیف';
-  if (pct < 60) return 'متوسط';
-  if (pct < 85) return 'خوب';
-  return 'بسیار قوی';
+  if (pct < 30) return GLOSSARY.passwordStrengthWeak;
+  if (pct < 60) return GLOSSARY.passwordStrengthMedium;
+  if (pct < 85) return GLOSSARY.passwordStrengthStrong;
+  return GLOSSARY.passwordStrengthVeryStrong;
 });
 
 const isFormValid = computed(() => {

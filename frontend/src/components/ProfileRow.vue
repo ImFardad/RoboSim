@@ -1,7 +1,7 @@
 <template>
   <div class="profile-row">
     <span>{{ label }}:</span>
-    <span :style="valueStyle">{{ value }}</span>
+    <span :style="valueStyle">{{ value || '' }}</span>
   </div>
 </template>
 
@@ -10,9 +10,11 @@ import type { StyleValue } from 'vue';
 
 interface Props {
   label: string;
-  value: string;
+  value?: string | null;
   valueStyle?: StyleValue;
 }
 
-defineProps<Props>();
+withDefaults(defineProps<Props>(), {
+  value: '',
+});
 </script>
