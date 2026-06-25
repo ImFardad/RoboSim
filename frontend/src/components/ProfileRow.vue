@@ -6,7 +6,7 @@
 </template>
 
 <script setup lang="ts">
-import { StyleValue } from 'vue';
+import type { StyleValue } from 'vue';
 
 interface Props {
   label: string;

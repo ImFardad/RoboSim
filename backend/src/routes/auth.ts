@@ -2,8 +2,8 @@ import { Router, Response } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import { Op } from 'sequelize';
-import { User } from '../models/User';
-import { authMiddleware, AuthRequest } from '../middleware/auth';
+import { User } from '../models/User.js';
+import { authMiddleware, AuthRequest } from '../middleware/auth.js';
 
 const router = Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_key_change_me_in_production';

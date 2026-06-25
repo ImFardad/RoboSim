@@ -1,8 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
-import { connectDB, sequelize } from './db';
-import authRouter from './routes/auth';
+import { connectDB, sequelize } from './db.js';
+import authRouter from './routes/auth.js';
 
 dotenv.config();
 

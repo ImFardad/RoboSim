@@ -1,5 +1,5 @@
 import { DataTypes, Model, Optional } from 'sequelize';
-import { sequelize } from '../db';
+import { sequelize } from '../db.js';
 
 interface UserAttributes {
   id: string;

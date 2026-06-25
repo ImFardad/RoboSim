@@ -46,6 +46,10 @@
 }
 
 /* Base resets & typography */
+html, :root {
+  background-color: var(--bg-color) !important;
+}
+
 body {
   margin: 0;
   padding: 0;
