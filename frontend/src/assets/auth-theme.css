@@ -661,3 +661,14 @@ body::after {
     transform: translateY(0) scale(1);
   }
 }
+
+/* Visual alignment corrections for inline SVGs */
+.card-icon-wrapper svg,
+.nav-brand svg,
+.dropdown-logout-btn svg,
+.toast-icon {
+  display: inline-block;
+  vertical-align: middle;
+  position: relative;
+  top: -1.5px;
+}

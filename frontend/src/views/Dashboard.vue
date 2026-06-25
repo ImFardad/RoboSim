@@ -40,18 +40,6 @@
             <!-- Profile Info rows -->
             <div class="profile-details" style="margin-bottom: 20px;">
               <ProfileRow :label="GLOSSARY.profileJoinedLabel" :value="formatDate(user.createdAt)" />
-              <ProfileRow 
-                :label="GLOSSARY.profileIdLabel" 
-                :value="user.id" 
-                :valueStyle="{
-                  fontFamily: 'monospace',
-                  fontSize: '0.75rem',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                  maxWidth: '180px'
-                }" 
-              />
             </div>
 
             <!-- Avatar selection grid -->
