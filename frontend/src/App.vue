@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted } from 'vue';
 import { useAuth } from './utils/auth';
+import ToastContainer from './components/ToastContainer.vue';
 
 const { initSession } = useAuth();
 
@@ -12,6 +13,7 @@ onMounted(async () => {
 
 <template>
   <router-view />
+  <ToastContainer />
 </template>
 
 <style>

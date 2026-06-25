@@ -1,4 +1,5 @@
 import { ref, computed } from 'vue';
+import { useToast } from './toast.js';
 
 export interface UserProfile {
   id: string;
@@ -15,6 +16,7 @@ const isLoading = ref(false);
 const authError = ref<string | null>(null);
 
 const isAuthenticated = computed(() => !!token.value);
+const { showSuccess, showError } = useToast();
 
 // Helper to set auth header
 function getAuthHeaders() {
@@ -47,7 +49,6 @@ async function initSession() {
     }
   } catch (err) {
     console.error('Failed to restore auth session:', err);
-    // Keep token for now (in case it is a network error), but don't set user
   } finally {
     isLoading.value = false;
   }
@@ -74,9 +75,15 @@ async function login(emailOrUsername: string, password: string): Promise<boolean
     token.value = data.token;
     user.value = data.user;
     localStorage.setItem('auth_token', data.token);
+    
+    // Success Toast from backend message
+    showSuccess(data.message || 'Login successful.');
     return true;
   } catch (err: any) {
-    authError.value = err.message || 'An error occurred during login.';
+    const errMsg = err.message || 'An error occurred during login.';
+    authError.value = errMsg;
+    // Error Toast from backend message
+    showError(errMsg);
     return false;
   } finally {
     isLoading.value = false;
@@ -104,9 +111,15 @@ async function register(username: string, email: string, password: string): Prom
     token.value = data.token;
     user.value = data.user;
     localStorage.setItem('auth_token', data.token);
+    
+    // Success Toast from backend message
+    showSuccess(data.message || 'Registration successful.');
     return true;
   } catch (err: any) {
-    authError.value = err.message || 'An error occurred during registration.';
+    const errMsg = err.message || 'An error occurred during registration.';
+    authError.value = errMsg;
+    // Error Toast from backend message
+    showError(errMsg);
     return false;
   } finally {
     isLoading.value = false;
@@ -118,6 +131,7 @@ function logout() {
   token.value = null;
   user.value = null;
   localStorage.removeItem('auth_token');
+  showSuccess('Disconnected from commander deck.');
 }
 
 export function useAuth() {
