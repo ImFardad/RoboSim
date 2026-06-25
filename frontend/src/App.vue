@@ -1,18 +1,19 @@
 <script setup lang="ts">
-import TheWelcome from './components/TheWelcome.vue'
+import { onMounted } from 'vue';
+import { useAuth } from './utils/auth';
+
+const { initSession } = useAuth();
+
+onMounted(async () => {
+  // Try to restore user session if token exists
+  await initSession();
+});
 </script>
 
 <template>
-  <main class="app">
-    <TheWelcome />
-  </main>
+  <router-view />
 </template>
 
 <style>
-.app {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem;
-  text-align: center;
-}
+/* App level layout styling is handled by global auth-theme.css */
 </style>
