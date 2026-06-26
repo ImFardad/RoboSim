@@ -10,9 +10,9 @@
 
     <div class="slider-group">
       <div class="slider-labels">
-        <span>-100% (REVERSE)</span>
+        <span>-100%</span>
         <span class="target-angle-badge">{{ GLOSSARY.throttleLabel }} {{ modelValue }}%</span>
-        <span>+100% (FORWARD)</span>
+        <span>+100%</span>
       </div>
       <input 
         :value="modelValue"

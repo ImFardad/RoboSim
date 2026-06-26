@@ -438,4 +438,18 @@ onMounted(async () => {
 .configs-card {
   padding: 8px 24px;
 }
+
+.dashboard-content {
+  flex: 1;
+  padding: 40px;
+  max-width: 1200px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+@media (max-width: 768px) {
+  .dashboard-content {
+    padding: 24px 16px;
+  }
+}
 </style>

@@ -54,8 +54,8 @@ const { toasts, removeToast } = useToast();
   display: flex;
   flex-direction: column;
   gap: 12px;
-  max-width: 380px;
-  width: 100%;
+  width: 380px;
+  max-width: calc(100vw - 48px);
   pointer-events: none;
 }
 

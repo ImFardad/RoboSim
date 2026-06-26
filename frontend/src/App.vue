@@ -95,7 +95,7 @@ body {
 /* Ambient glow effects in background */
 body::before {
   content: '';
-  position: absolute;
+  position: fixed;
   top: -10%;
   left: -10%;
   width: 50vw;
@@ -107,7 +107,7 @@ body::before {
 
 body::after {
   content: '';
-  position: absolute;
+  position: fixed;
   bottom: -10%;
   right: -10%;
   width: 50vw;
