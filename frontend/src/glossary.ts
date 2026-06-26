@@ -104,6 +104,13 @@ export const GLOSSARY = {
   simulatorTitle: 'Steering Deflection Simulator',
   simulatorDesc: 'Use the slider to simulate steering command changes. Notice the wheel rotation response latency determined by your current Steering Servos level.',
   steerAngleLabel: 'Command Angle Target: ',
-  currentAngleLabel: 'Current Wheel Angle: '
+  currentAngleLabel: 'Current Wheel Angle: ',
+
+  // Motion simulator
+  motionSimulatorTitle: 'Propulsion & Motion Simulator',
+  motionSimulatorDesc: 'Modulate motor throttle to simulate forward and reverse acceleration. Watch the tyre tread patterns scroll and monitor velocity adjustments in real-time.',
+  throttleLabel: 'Command Throttle Target: ',
+  simSpeedLabel: 'Simulated Speed: ',
+  simAccelLabel: 'Active Acceleration: '
 };
 export type Glossary = typeof GLOSSARY;
