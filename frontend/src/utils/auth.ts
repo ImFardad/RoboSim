@@ -30,15 +30,35 @@ function getAuthHeaders() {
   return headers;
 }
 
+// Authorized Fetch Wrapper (handles automatic 401 logout/redirect)
+export async function authFetch(url: string, options: RequestInit = {}) {
+  const headers = {
+    ...getAuthHeaders(),
+    ...(options.headers || {}),
+  };
+  
+  const res = await fetch(url, {
+    ...options,
+    headers,
+  });
+  
+  if (res.status === 401) {
+    logout();
+    window.location.href = '/login';
+    throw new Error('Unauthorized session. Redirecting to login...');
+  }
+  
+  return res;
+}
+
 // Initialize and restore session
 async function initSession() {
   if (!token.value) return;
   
   isLoading.value = true;
   try {
-    const res = await fetch(`${API_BASE}/auth/me`, {
+    const res = await authFetch(`${API_BASE}/auth/me`, {
       method: 'GET',
-      headers: getAuthHeaders(),
     });
 
     if (res.ok) {
@@ -133,9 +153,8 @@ async function changeAvatar(avatarId: number): Promise<boolean> {
   authError.value = null;
 
   try {
-    const res = await fetch(`${API_BASE}/auth/avatar`, {
+    const res = await authFetch(`${API_BASE}/auth/avatar`, {
       method: 'PATCH',
-      headers: getAuthHeaders(),
       body: JSON.stringify({ avatarId }),
     });
 
@@ -180,5 +199,6 @@ export function useAuth() {
     logout,
     changeAvatar,
     getAuthHeaders,
+    authFetch,
   };
 }

@@ -1,5 +1,5 @@
 <template>
-  <div class="canvas-card">
+  <div class="glass-card canvas-card">
     <div class="canvas-header">
       <div class="status-indicator">
         <span class="pulse-dot"></span>
