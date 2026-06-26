@@ -175,21 +175,11 @@ function drawRobot(ctx: CanvasRenderingContext2D) {
     ctx.stroke();
   }
 
-  if (props.bodyLevel >= 3) {
-    // Corner reinforcement plates (perfectly rounded because of clip)
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.1)';
-    const capSize = 24;
-    ctx.fillRect(-bodySize / 2, -bodySize / 2, capSize, capSize);
-    ctx.fillRect(bodySize / 2 - capSize, -bodySize / 2, capSize, capSize);
-    ctx.fillRect(-bodySize / 2, bodySize / 2 - capSize, capSize, capSize);
-    ctx.fillRect(bodySize / 2 - capSize, bodySize / 2 - capSize, capSize, capSize);
-  }
-
   if (props.bodyLevel >= 4) {
     // Carbon fiber armor texture stripes (perfectly rounded because of clip)
     ctx.strokeStyle = 'rgba(6, 182, 212, 0.04)';
     ctx.lineWidth = 4;
-    for (let offset = -bodySize; offset < bodySize; offset += 16) {
+    for (let offset = -1.5 * bodySize; offset < bodySize; offset += 16) {
       ctx.beginPath();
       ctx.moveTo(offset, -bodySize / 2);
       ctx.lineTo(offset + bodySize, bodySize / 2);
