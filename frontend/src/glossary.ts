@@ -60,6 +60,50 @@ export const GLOSSARY = {
   historyCardTitle: 'Match Archival Replays',
   historyCardDesc: 'Analyze historical battle logs step-by-step. Debug and optimize robot performance.',
   historyCardBtn: 'Query Archives',
-  historyFeatureAlert: 'Replay query interface is offline. Archival system scheduled in next phases.'
+  historyFeatureAlert: 'Replay query interface is offline. Archival system scheduled in next phases.',
+
+  // Robot Laboratory
+  labTitle: 'Robot Assembly Laboratory',
+  labSubtitle: 'Modify, calibrate, and upgrade your default physical robot parts and monitor real-time specifications.',
+  backToDashboardBtn: 'Back to Cockpit',
+  saveConfigBtn: 'Lock Configuration',
+  savingConfigText: 'Syncing core systems...',
+  saveSuccessToast: 'Robot configuration synchronized successfully.',
+  saveErrorToast: 'Failed to update robot configuration.',
+  loadErrorToast: 'Failed to load robot configuration.',
+  
+  // Component section titles
+  bodyUpgradeTitle: 'Chassis Plating (Body)',
+  bodyUpgradeDesc: 'Increases structural HP by +20% but adds +10% weight.',
+  batteryUpgradeTitle: 'Power Core (Battery)',
+  batteryUpgradeDesc: 'Expands energy storage capacity by +25% and adds +15% weight.',
+  brainUpgradeTitle: 'Processor Core (Brain)',
+  brainUpgradeDesc: 'Increases multitasking capacity to run more scripts concurrently (+1 task per level).',
+  engineUpgradeTitle: 'Engine Power (Rear Wheels)',
+  engineUpgradeDesc: 'Boosts propulsion thrust by +5% but increases consumption rate by +5%.',
+  steeringUpgradeTitle: 'Steering Servos (Front Wheels)',
+  steeringUpgradeDesc: 'Calibrates front-wheel deflection range (120° to 160°) and angular transition speed.',
+  sensorsInfoTitle: 'Orthogonal Distance Sensors',
+  sensorsInfoDesc: 'Equipped with 4 default orthogonal scanners (Front, Back, Left, Right). Constant 3 kg weight. Non-upgradable.',
+  
+  // Real-time specs panel
+  specsHeader: 'Chassis Specifications',
+  hpStat: 'Structural Durability',
+  weightStat: 'Total Vehicle Mass',
+  enginePowerStat: 'Engine Thrust',
+  accelStat: 'Propulsion Accel',
+  speedStat: 'Top Speed Bounds',
+  tasksStat: 'Processor Threads',
+  steerRangeStat: 'Steering Amplitude',
+  steerSpeedStat: 'Steering Velocity',
+  batteryCapStat: 'Energy Capacity',
+  idleTimeStat: 'Maximum Idle Time',
+  moveTimeStat: 'Full-Throttle Duration',
+
+  // Steering simulator
+  simulatorTitle: 'Steering Deflection Simulator',
+  simulatorDesc: 'Use the slider to simulate steering command changes. Notice the wheel rotation response latency determined by your current Steering Servos level.',
+  steerAngleLabel: 'Command Angle Target: ',
+  currentAngleLabel: 'Current Wheel Angle: '
 };
 export type Glossary = typeof GLOSSARY;

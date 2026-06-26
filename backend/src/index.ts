@@ -2,7 +2,14 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { connectDB, sequelize } from './db.js';
+import { User } from './models/User.js';
+import { Robot } from './models/Robot.js';
 import authRouter from './routes/auth.js';
+import robotRouter from './routes/robot.js';
+
+// Setup associations
+User.hasOne(Robot, { foreignKey: 'userId', as: 'robot' });
+Robot.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 
 dotenv.config();
 
@@ -15,6 +22,7 @@ app.use(express.json());
 
 // ---------- Routes ----------
 app.use('/api/auth', authRouter);
+app.use('/api/robot', robotRouter);
 
 app.get('/api/health', (_req, res) => {
   res.json({
@@ -33,7 +41,8 @@ app.get('/api', (_req, res) => {
       '/api/health',
       '/api/auth/register',
       '/api/auth/login',
-      '/api/auth/me'
+      '/api/auth/me',
+      '/api/robot'
     ],
   });
 });

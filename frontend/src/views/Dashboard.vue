@@ -123,7 +123,7 @@
           </svg>
           <span>{{ GLOSSARY.arenaCardTitle }}</span>
         </a>
-        <a href="#" class="menu-item" @click.prevent="showFeatureAlert(GLOSSARY.robotsFeatureAlert)">
+        <a href="#" class="menu-item" @click.prevent="goToLab">
           <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <rect x="4" y="4" width="16" height="16" rx="2" ry="2"></rect>
             <rect x="9" y="9" width="6" height="6"></rect>
@@ -174,7 +174,7 @@
           :title="GLOSSARY.robotsCardTitle"
           :desc="GLOSSARY.robotsCardDesc"
           :actionText="GLOSSARY.robotsCardBtn"
-          @action="showFeatureAlert(GLOSSARY.robotsFeatureAlert)"
+          @action="goToLab"
         >
           <template #icon>
             <!-- CPU Microchip SVG -->
@@ -218,6 +218,11 @@ const router = useRouter();
 const { user, logout, changeAvatar } = useAuth();
 const isProfilePanelOpen = ref(false);
 const isSidebarOpen = ref(false);
+
+function goToLab() {
+  isSidebarOpen.value = false;
+  router.push('/lab');
+}
 
 function toggleProfilePanel() {
   isProfilePanelOpen.value = !isProfilePanelOpen.value;
