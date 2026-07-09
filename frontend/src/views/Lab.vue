@@ -431,7 +431,7 @@ onMounted(async () => {
   flex-direction: column;
   gap: 24px;
   width: 100%;
-  max-width: 460px;
+  max-width: 100%;
 }
 
 /* ---------------- Config Panel ---------------- */

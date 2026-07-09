@@ -281,7 +281,7 @@ const tabs = [
 .docs-content {
   flex: 1;
   padding: 40px;
-  max-width: 1200px;
+  max-width: 100%;
   margin: 0 auto;
   width: 100%;
   box-sizing: border-box;

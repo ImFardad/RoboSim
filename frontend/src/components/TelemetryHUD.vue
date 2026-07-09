@@ -4,7 +4,12 @@
     :style="{ transform: `translate(${posX}px, ${posY}px)` }"
   >
     <!-- Header serving as drag handle -->
-    <div class="hud-header" @pointerdown="startDrag">
+    <div 
+      class="hud-header" 
+      @pointerdown="startDrag"
+      @pointermove="onDrag"
+      @pointerup="stopDrag"
+    >
       <div class="hud-title">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect>
@@ -119,24 +124,24 @@ defineEmits<{
 const posX = ref(30);
 const posY = ref(30);
 
+let isDragging = false;
 let startX = 0;
 let startY = 0;
 let startPosX = 0;
 let startPosY = 0;
 
 function startDrag(e: PointerEvent) {
-  // Capture coordinates
+  const el = e.currentTarget as HTMLElement;
+  el.setPointerCapture(e.pointerId);
+  isDragging = true;
   startX = e.clientX;
   startY = e.clientY;
   startPosX = posX.value;
   startPosY = posY.value;
-
-  // Add global window drag listeners
-  window.addEventListener('pointermove', onDrag);
-  window.addEventListener('pointerup', stopDrag);
 }
 
 function onDrag(e: PointerEvent) {
+  if (!isDragging) return;
   const dx = e.clientX - startX;
   const dy = e.clientY - startY;
 
@@ -145,9 +150,11 @@ function onDrag(e: PointerEvent) {
   posY.value = startPosY + dy;
 }
 
-function stopDrag() {
-  window.removeEventListener('pointermove', onDrag);
-  window.removeEventListener('pointerup', stopDrag);
+function stopDrag(e: PointerEvent) {
+  if (!isDragging) return;
+  const el = e.currentTarget as HTMLElement;
+  el.releasePointerCapture(e.pointerId);
+  isDragging = false;
 }
 </script>
 
