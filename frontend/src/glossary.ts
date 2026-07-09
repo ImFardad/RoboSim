@@ -111,6 +111,39 @@ export const GLOSSARY = {
   motionSimulatorDesc: 'Modulate motor throttle to simulate forward and reverse acceleration. Watch the tyre tread patterns scroll and monitor velocity adjustments in real-time.',
   throttleLabel: 'Command Throttle Target: ',
   simSpeedLabel: 'Simulated Speed: ',
-  simAccelLabel: 'Active Acceleration: '
+  simAccelLabel: 'Active Acceleration: ',
+
+  // Playground
+  playgroundTitle: 'Robot Playground',
+  playgroundSubtitle: 'Develop smart AI scripts and simulate robot movements inside a closed arena.',
+  runSimBtn: 'Run Code & Start',
+  stopSimBtn: 'Pause Simulation',
+  resetSimBtn: 'Reset Position',
+  editorTitle: 'Robot Decision Core (Brain)',
+  consoleTitle: 'Console Outputs & Logs',
+  consolePlaceholder: 'Click "Run Code & Start" to execute your script and monitor telemetry outputs...',
+  docsTitle: 'Sensor & API Documentation',
+  docsSensorsDesc: 'Input telemetry fields available via the `sensors` object:',
+  docsActionsDesc: 'Expected return object format from the `think` function:',
+  defaultBotScript: `// RoboSim Smart Bot Controller
+// This function runs on every simulation tick.
+// Input: 'sensors' object containing robot coordinates, speed, and wall scanners.
+// Output: An object with 'throttle' (-1.0 to 1.0) and 'targetSteering' (steering angle in degrees).
+
+function think(sensors) {
+  // If the wall in front is closer than 120 pixels, reverse and steer away
+  if (sensors.wallDistance.front < 120) {
+    return {
+      throttle: -0.5,
+      targetSteering: -35
+    };
+  }
+  
+  // Otherwise, move forward at cruising speed
+  return {
+    throttle: 0.8,
+    targetSteering: 0
+  };
+}`
 };
 export type Glossary = typeof GLOSSARY;

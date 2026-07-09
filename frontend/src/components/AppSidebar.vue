@@ -26,12 +26,12 @@
         </svg>
         <span>Dashboard</span>
       </a>
-      <a href="#" :class="['menu-item', { active: activeMenu === 'arena' }]" @click.prevent="showAlert(GLOSSARY.arenaFeatureAlert)">
+      <a href="#" :class="['menu-item', { active: activeMenu === 'playground' }]" @click.prevent="navigate('/playground')">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="10"></circle>
           <path d="m16.2 7.8-8.4 8.4M12 2v2M12 20v2M20 12h-2M4 12H2"></path>
         </svg>
-        <span>{{ GLOSSARY.arenaCardTitle }}</span>
+        <span>Playground</span>
       </a>
       <a href="#" :class="['menu-item', { active: activeMenu === 'lab' }]" @click.prevent="navigate('/lab')">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
