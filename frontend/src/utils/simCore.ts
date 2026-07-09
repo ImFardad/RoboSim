@@ -258,7 +258,7 @@ export class RobotSimulation {
     return {
       x: this.state.x,
       y: this.state.y,
-      speed: this.state.speed,
+      speed: this.state.speed / 40,
       heading: this.state.heading,
       steeringAngle: this.state.steeringAngle,
       hp: this.state.hp,

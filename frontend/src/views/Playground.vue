@@ -1,260 +1,302 @@
 <template>
-  <div class="playground-container">
-    <!-- Navbar -->
-    <AppHeader @toggle-sidebar="isSidebarOpen = !isSidebarOpen" />
-
-    <!-- Sidebar Left Navigation -->
-    <AppSidebar :isOpen="isSidebarOpen" @close="isSidebarOpen = false" activeMenu="playground" />
-
-    <!-- Main Workspace -->
-    <main class="playground-content" v-if="user">
-      <div class="playground-header">
-        <h1>{{ GLOSSARY.playgroundTitle }}</h1>
-        <p>{{ GLOSSARY.playgroundSubtitle }}</p>
+  <div class="playground-layout">
+    <!-- Header Toolbar (Workspace Control Center) -->
+    <header class="workspace-toolbar">
+      <div class="toolbar-left">
+        <button @click="goBack" class="btn-toolbar btn-back" type="button" title="Back to Cockpit">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="19" y1="12" x2="5" y2="12"></line>
+            <polyline points="12 19 5 12 12 5"></polyline>
+          </svg>
+          <span>Cockpit</span>
+        </button>
+        <div class="toolbar-divider"></div>
+        <span class="workspace-title">Workspace: <strong class="text-cyan">{{ activeScript?.name || 'Loading...' }}</strong></span>
       </div>
 
-      <!-- Main Columns -->
-      <div class="playground-grid" v-if="!isLoadingRobot">
+      <!-- Center: Simulation Controls -->
+      <div class="toolbar-center">
+        <div class="sim-btn-group">
+          <button 
+            v-if="!isSimRunning" 
+            @click="startSimulation" 
+            class="btn-control btn-play"
+            type="button"
+            title="Compile & Run"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+              <polygon points="5 3 19 12 5 21 5 3"></polygon>
+            </svg>
+            <span>Run</span>
+          </button>
+          
+          <button 
+            v-else 
+            @click="pauseSimulation" 
+            class="btn-control btn-pause"
+            type="button"
+            title="Pause Simulation"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+              <rect x="6" y="4" width="4" height="16"></rect>
+              <rect x="14" y="4" width="4" height="16"></rect>
+            </svg>
+            <span>Pause</span>
+          </button>
+
+          <button 
+            @click="resetSimulation" 
+            class="btn-control btn-reset"
+            type="button"
+            title="Reset Robot Coordinates"
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
+            </svg>
+            <span>Reset</span>
+          </button>
+        </div>
+
+        <div class="toolbar-divider"></div>
+
+        <!-- Simulator Speed selector -->
+        <div class="speed-selector">
+          <span class="speed-label">Speed:</span>
+          <div class="speed-buttons">
+            <button 
+              v-for="multiplier in [1, 2, 4]" 
+              :key="multiplier"
+              :class="['speed-btn', { active: simSpeed === multiplier }]"
+              @click="simSpeed = multiplier"
+              type="button"
+            >
+              {{ multiplier }}x
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right: Actions & Profile -->
+      <div class="toolbar-right">
+        <!-- Telemetry Window Toggle -->
+        <button 
+          @click="isHudVisible = !isHudVisible" 
+          :class="['btn-toolbar', { active: isHudVisible }]"
+          type="button" 
+          title="Toggle Floating HUD"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect>
+            <line x1="7" y1="2" x2="7" y2="22"></line>
+            <line x1="17" y1="2" x2="17" y2="22"></line>
+            <line x1="2" y1="12" x2="22" y2="12"></line>
+          </svg>
+          <span>HUD</span>
+        </button>
+
+        <!-- Save button -->
+        <button 
+          @click="saveActiveScript" 
+          class="btn-toolbar btn-save" 
+          type="button" 
+          title="Save Script (Ctrl + S)"
+          :disabled="isSavingScript"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path>
+            <polyline points="17 21 17 13 7 13 7 21"></polyline>
+            <polyline points="7 3 7 8 15 8"></polyline>
+          </svg>
+          <span>{{ isSavingScript ? 'Saving...' : 'Save' }}</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Workspace split content -->
+    <div class="workspace-body" ref="workspaceRef">
+      
+      <!-- Left Area (Canvas & Explorer) -->
+      <div class="split-pane pane-left" :style="{ width: leftPanelWidth + '%' }">
         
-        <!-- Left Side: Simulation Canvas & Controls -->
-        <div class="sim-panel glass-card">
+        <!-- Nested File Explorer -->
+        <div class="explorer-sidebar">
+          <div class="explorer-header">
+            <span class="explorer-title">SCRIPTS EXPLORER</span>
+            <button @click="createNewScript" class="btn-new-file" type="button" title="New Script">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="12" y1="5" x2="12" y2="19"></line>
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+            </button>
+          </div>
+
+          <div class="explorer-files">
+            <div 
+              v-for="scr in scriptsList" 
+              :key="scr.id"
+              :class="['file-item', { active: activeScript?.id === scr.id }]"
+              @click="selectScript(scr)"
+              @dblclick="renameScript(scr)"
+            >
+              <div class="file-name-group">
+                <svg class="file-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                  <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+                <span class="file-name">{{ scr.name }}</span>
+              </div>
+              
+              <button 
+                v-if="scriptsList.length > 1" 
+                @click.stop="deleteScript(scr)" 
+                class="btn-delete-file" 
+                type="button"
+                title="Delete file"
+              >
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 2D Arena Canvas view -->
+        <div class="canvas-wrapper">
           <PlaygroundCanvas 
+            v-if="!isLoadingRobot"
             :state="simState" 
             :levels="robotLevels" 
             :sensors="sensorData" 
           />
 
-          <!-- Live Robot Status Bar -->
-          <div class="robot-hud">
-            <div class="hud-item">
-              <span class="hud-label">HP:</span>
-              <div class="hud-bar-bg">
-                <div 
-                  class="hud-bar-fill hp-fill" 
-                  :style="{ width: (simState.hp / maxHP * 100) + '%' }"
-                ></div>
-              </div>
-              <span class="hud-value">{{ Math.round(simState.hp) }} / {{ Math.round(maxHP) }}</span>
-            </div>
-
-            <div class="hud-item">
-              <span class="hud-label">Energy:</span>
-              <div class="hud-bar-bg">
-                <div 
-                  class="hud-bar-fill battery-fill" 
-                  :style="{ width: (simState.battery / maxBattery * 100) + '%' }"
-                ></div>
-              </div>
-              <span class="hud-value">{{ Math.round(simState.battery) }} / {{ Math.round(maxBattery) }} EU</span>
-            </div>
-
-            <div class="hud-row-grid">
-              <div class="hud-sub-item">
-                <span class="hud-label">Speed:</span>
-                <span class="hud-value text-cyan">{{ Math.round(Math.abs(simState.speed)) }} px/s</span>
-              </div>
-              <div class="hud-sub-item">
-                <span class="hud-label">Accel:</span>
-                <span class="hud-value text-cyan">{{ Math.round(activeAccel) }} px/s²</span>
-              </div>
-              <div class="hud-sub-item">
-                <span class="hud-label">Steer:</span>
-                <span class="hud-value text-cyan">{{ Math.round(simState.steeringAngle) }}°</span>
-              </div>
-            </div>
-          </div>
-
-          <!-- Controls panel -->
-          <div class="sim-controls">
-            <div class="control-buttons">
-              <button 
-                v-if="!isSimRunning" 
-                @click="startSimulation" 
-                class="btn btn-primary"
-                type="button"
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                  <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                </svg>
-                <span>{{ GLOSSARY.runSimBtn }}</span>
-              </button>
-
-              <button 
-                v-else 
-                @click="pauseSimulation" 
-                class="btn btn-warning"
-                type="button"
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                  <rect x="6" y="4" width="4" height="16"></rect>
-                  <rect x="14" y="4" width="4" height="16"></rect>
-                </svg>
-                <span>{{ GLOSSARY.stopSimBtn }}</span>
-              </button>
-
-              <button 
-                @click="resetSimulation" 
-                class="btn btn-secondary"
-                type="button"
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"></path>
-                </svg>
-                <span>{{ GLOSSARY.resetSimBtn }}</span>
-              </button>
-            </div>
-
-            <!-- Simulation Speed multiplier -->
-            <div class="speed-selector">
-              <span class="speed-label">Simulation Speed:</span>
-              <div class="speed-btn-group">
-                <button 
-                  v-for="multiplier in [1, 2, 4]" 
-                  :key="multiplier"
-                  :class="['speed-btn', { active: simSpeed === multiplier }]"
-                  @click="simSpeed = multiplier"
-                  type="button"
-                >
-                  {{ multiplier }}x
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Right Side: Code Editor, Logs & Collapsible Documentation -->
-        <div class="editor-panel">
-          
-          <!-- Collapsible API Documentation Drawer -->
-          <div class="docs-section glass-card" :class="{ collapsed: isDocsCollapsed }">
-            <div class="docs-header" @click="isDocsCollapsed = !isDocsCollapsed">
-              <div class="docs-header-title">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-                </svg>
-                <span>{{ GLOSSARY.docsTitle }}</span>
-              </div>
-              <svg 
-                class="arrow-icon" 
-                :class="{ rotated: !isDocsCollapsed }"
-                width="16" 
-                height="16" 
-                viewBox="0 0 24 24" 
-                fill="none" 
-                stroke="currentColor" 
-                stroke-width="2.5" 
-                stroke-linecap="round" 
-                stroke-linejoin="round"
-              >
-                <polyline points="6 9 12 15 18 9"></polyline>
-              </svg>
-            </div>
-
-            <div class="docs-content" v-show="!isDocsCollapsed">
-                <div class="docs-group">
-                  <h4 class="text-cyan">{{ GLOSSARY.docsSensorsDesc }}</h4>
-                  <ul class="docs-list">
-                    <li><code>sensors.x</code> , <code>sensors.y</code> : Robot position coordinates inside the virtual arena (0 to 1000).</li>
-                    <li><code>sensors.speed</code> : Current linear velocity (pixels/second).</li>
-                    <li><code>sensors.heading</code> : Robot orientation angle (0 to 360 degrees. 270 is facing North).</li>
-                    <li><code>sensors.steeringAngle</code> : Current front wheel deflection angle (degrees).</li>
-                    <li><code>sensors.hp</code> : Robot chassis structural integrity (HP).</li>
-                    <li><code>sensors.battery</code> : Remaining electrical power capacity (EU).</li>
-                    <li><code>sensors.wallDistance.front</code> : Raycast distance from front to the closest boundary wall.</li>
-                    <li><code>sensors.wallDistance.back</code> : Raycast distance from back to the wall.</li>
-                    <li><code>sensors.wallDistance.left</code> : Raycast distance from left to the wall.</li>
-                    <li><code>sensors.wallDistance.right</code> : Raycast distance from right to the wall.</li>
-                  </ul>
-                </div>
-
-                <div class="docs-group">
-                  <h4 class="text-cyan">{{ GLOSSARY.docsActionsDesc }}</h4>
-                  <ul class="docs-list">
-                    <li><code>throttle</code> : Engine drive throttle force (from <code>-1.0</code> full reverse to <code>+1.0</code> full forward).</li>
-                    <li><code>targetSteering</code> : Desired steering deflection angle in degrees (clamped to your maximum wheel deflection bounds).</li>
-                  </ul>
-                </div>
-              </div>
-          </div>
-
-          <!-- Code Editor Wrapper -->
-          <div class="editor-section glass-card">
-            <div class="editor-toolbar">
-              <h3>{{ GLOSSARY.editorTitle }}</h3>
-              <span class="editor-hint">TypeScript/JavaScript</span>
-            </div>
-
-            <!-- Custom Editor with Line Numbers -->
-            <div class="code-editor-container">
-              <div class="line-numbers" ref="lineNumbersRef">
-                <div v-for="n in lineCount" :key="n" class="line-number">{{ n }}</div>
-              </div>
-              <textarea 
-                v-model="userCode" 
-                @scroll="syncScroll"
-                @keydown.tab.prevent="insertTab"
-                class="code-textarea"
-                ref="textareaRef"
-                spellcheck="false"
-                autocomplete="off"
-              ></textarea>
-            </div>
-          </div>
-
-          <!-- Local Console log Area -->
-          <div class="console-section glass-card">
-            <div class="console-header">
-              <h3>{{ GLOSSARY.consoleTitle }}</h3>
-              <button @click="clearLogs" class="clear-btn" type="button">Clear Console</button>
-            </div>
-
-            <div class="console-logs" ref="consoleRef">
-              <div v-if="consoleLogs.length === 0" class="console-placeholder">
-                {{ GLOSSARY.consolePlaceholder }}
-              </div>
-              <div 
-                v-for="(log, idx) in consoleLogs" 
-                :key="idx" 
-                :class="['console-line', log.type]"
-              >
-                <span class="log-time">[{{ log.time }}]</span>
-                <span class="log-text">{{ log.text }}</span>
-              </div>
-            </div>
-          </div>
-
+          <!-- Draggable HUD overlay -->
+          <TelemetryHUD 
+            v-if="isHudVisible && !isLoadingRobot"
+            :hp="simState.hp"
+            :maxHP="maxHP"
+            :battery="simState.battery"
+            :maxBattery="maxBattery"
+            :speed="simState.speed"
+            :accel="activeAccel"
+            :steeringAngle="simState.steeringAngle"
+            :wallDistance="sensorData.wallDistance"
+            @close="isHudVisible = false"
+          />
         </div>
 
       </div>
 
-      <!-- Loading skeleton -->
-      <div v-else class="loading-container glass-card">
-        <div class="spinner"></div>
-        <p>Booting processor algorithms and downloading robot telemetry...</p>
+      <!-- Vertical Resizer Divider Handle -->
+      <div class="resizer vertical-resizer" @pointerdown="startVerticalResize"></div>
+
+      <!-- Right Area (Editor & Console) -->
+      <div class="split-pane pane-right" :style="{ width: (100 - leftPanelWidth) + '%' }">
+        
+        <!-- Editor Top Half -->
+        <div class="editor-pane" :style="{ height: editorHeight + '%' }">
+          <div class="pane-header">
+            <span class="pane-title">CODE EDITOR</span>
+            <span class="file-path text-muted">{{ activeScript?.name }} - Unsaved changes are saved locally</span>
+          </div>
+          <!-- Monaco editor container -->
+          <div class="monaco-host" ref="editorContainerRef"></div>
+        </div>
+
+        <!-- Horizontal Resizer Divider Handle -->
+        <div class="resizer horizontal-resizer" @pointerdown="startHorizontalResize"></div>
+
+        <!-- Console Bottom Half -->
+        <div class="console-pane" :style="{ height: (100 - editorHeight) + '%' }">
+          <div class="pane-header console-header">
+            <span class="pane-title">CONSOLE TERMINAL</span>
+            <button @click="clearLogs" class="clear-btn" type="button">Clear Console</button>
+          </div>
+
+          <div class="console-logs" ref="consoleRef">
+            <div v-if="consoleLogs.length === 0" class="console-placeholder">
+              {{ GLOSSARY.consolePlaceholder }}
+            </div>
+            <div 
+              v-for="(log, idx) in consoleLogs" 
+              :key="idx" 
+              :class="['console-line', log.type]"
+            >
+              <span class="log-time">[{{ log.time }}]</span>
+              <span class="log-text">{{ log.text }}</span>
+            </div>
+          </div>
+        </div>
+
       </div>
-    </main>
+
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue';
-import { useAuth } from '../utils/auth';
+import { ref, onMounted, onUnmounted } from 'vue';
+import { useRouter } from 'vue-router';
 import { authFetch } from '../utils/auth';
 import { GLOSSARY } from '../glossary';
-import AppHeader from '../components/AppHeader.vue';
-import AppSidebar from '../components/AppSidebar.vue';
 import PlaygroundCanvas from '../components/PlaygroundCanvas.vue';
+import TelemetryHUD from '../components/TelemetryHUD.vue';
 import { RobotSimulation } from '../utils/simCore';
 import type { SimState, RobotLevels, SensorData } from '../utils/simCore';
 
-const { user } = useAuth();
-const isSidebarOpen = ref(false);
+// Monaco imports & worker setups
+import * as monaco from 'monaco-editor';
+import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
+import jsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker';
+import cssWorker from 'monaco-editor/esm/vs/language/css/css.worker?worker';
+import htmlWorker from 'monaco-editor/esm/vs/language/html/html.worker?worker';
+import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker';
+
+// Define workers offline
+self.MonacoEnvironment = {
+  getWorker(_, label) {
+    if (label === 'json') return new jsonWorker();
+    if (label === 'css' || label === 'scss' || label === 'less') return new cssWorker();
+    if (label === 'html' || label === 'handlebars' || label === 'razor') return new htmlWorker();
+    if (label === 'typescript' || label === 'javascript') return new tsWorker();
+    return new editorWorker();
+  }
+};
+
+interface ScriptFile {
+  id: string;
+  name: string;
+  code: string;
+}
+
+const router = useRouter();
+
+// Loading states
 const isLoadingRobot = ref(true);
+const isHudVisible = ref(true);
+const isSavingScript = ref(false);
 
-const isDocsCollapsed = ref(false);
+// Panel split ratios
+const leftPanelWidth = ref(45); // width percentage of the left panel
+const editorHeight = ref(65); // height percentage of the editor inside right pane
 
-// Active Robot Configuration
+const workspaceRef = ref<HTMLDivElement | null>(null);
+const editorContainerRef = ref<HTMLDivElement | null>(null);
+const consoleRef = ref<HTMLDivElement | null>(null);
+
+// Monaco Instance references
+let editorInstance: monaco.editor.IStandaloneCodeEditor | null = null;
+
+// Database Sync File Explorer
+const scriptsList = ref<ScriptFile[]>([]);
+const activeScript = ref<ScriptFile | null>(null);
+const activeCodeText = ref('');
+
+// Robot Upgrades Specs
 const robotLevels = ref<RobotLevels>({
   bodyLevel: 1,
   batteryLevel: 1,
@@ -263,19 +305,10 @@ const robotLevels = ref<RobotLevels>({
   steeringLevel: 1
 });
 
-// Max specs derived
 const maxHP = ref(100);
 const maxBattery = ref(60000);
 
-// Editor & Local Logs
-const userCode = ref('');
-const consoleLogs = ref<Array<{ type: 'info' | 'error' | 'log'; text: string; time: string }>>([]);
-
-const textareaRef = ref<HTMLTextAreaElement | null>(null);
-const lineNumbersRef = ref<HTMLDivElement | null>(null);
-const consoleRef = ref<HTMLDivElement | null>(null);
-
-// Simulation Runtime Engine
+// Simulator Physics Engine state
 let simInstance: RobotSimulation | null = null;
 const simState = ref<SimState>({
   x: 500,
@@ -303,65 +336,294 @@ const sensorData = ref<SensorData>({
 });
 
 const isSimRunning = ref(false);
-const simSpeed = ref(1); // 1x, 2x, 4x speed Multipliers
-const activeAccel = ref(0); // Realtime acceleration value
+const simSpeed = ref(1);
+const activeAccel = ref(0);
 let lastFrameTime = performance.now();
 let simFrameId: number | null = null;
 
-// Sandboxed Runtime Executable
+// Compiled sandboxed function ref
 let activeThinkFn: ((sensors: SensorData) => { throttle: number; targetSteering: number }) | null = null;
 
-// count line count for custom code textarea
-const lineCount = computed(() => {
-  const lines = userCode.value.split('\n');
-  return lines.length || 1;
-});
+const consoleLogs = ref<Array<{ type: 'info' | 'error' | 'log'; text: string; time: string }>>([]);
 
-// Load Code and levels from localstorage & backend API
-async function loadData() {
-  // 1. Restore written code from localstorage
-  const storedCode = localStorage.getItem('playground_code');
-  userCode.value = storedCode || GLOSSARY.defaultBotScript;
+// Back navigation
+function goBack() {
+  pauseSimulation();
+  router.push('/dashboard');
+}
 
-  // 2. Fetch Robot Levels
-  try {
-    const res = await authFetch('/api/robot');
-    const data = await res.json();
-    if (data.robot) {
-      robotLevels.value = {
-        bodyLevel: data.robot.bodyLevel,
-        batteryLevel: data.robot.batteryLevel,
-        brainLevel: data.robot.brainLevel,
-        engineLevel: data.robot.engineLevel,
-        steeringLevel: data.robot.steeringLevel
-      };
-    }
-  } catch (err) {
-    addLog('error', 'Failed to load robot configuration from server. Starting simulator with level-1 defaults.');
-  } finally {
-    // Instantiate engine
-    simInstance = new RobotSimulation(robotLevels.value);
-    maxHP.value = simInstance.maxHP;
-    maxBattery.value = simInstance.maxBattery;
-    
-    // Bind Collision Handler
-    simInstance.onCollision = (evt) => {
-      addLog(
-        'error', 
-        `High speed collision with ${evt.wall} wall! Impact speed: ${Math.round(evt.impactSpeed)}px/s | Damage sustained: ${evt.damage} HP`
-      );
-      if (simInstance!.state.hp <= 0) {
-        addLog('error', 'Critical chassis systems destroyed! Robot has ceased operations.');
-        isSimRunning.value = false;
-      }
-    };
+// ---------------- Panel resizing drag handlers ----------------
 
-    updateReactiveStates();
-    isLoadingRobot.value = false;
+let workspaceWidth = 0;
+let workspaceHeight = 0;
+
+function startVerticalResize() {
+  if (workspaceRef.value) {
+    workspaceWidth = workspaceRef.value.getBoundingClientRect().width;
+  }
+  window.addEventListener('pointermove', onVerticalResize);
+  window.addEventListener('pointerup', stopResize);
+}
+
+function onVerticalResize(e: PointerEvent) {
+  if (workspaceRef.value) {
+    const rect = workspaceRef.value.getBoundingClientRect();
+    const relativeX = e.clientX - rect.left;
+    const pct = (relativeX / workspaceWidth) * 100;
+    // Clamp left pane width between 25% and 75%
+    leftPanelWidth.value = Math.max(25, Math.min(75, pct));
   }
 }
 
-// Sync reactive properties with simulation engine class
+function startHorizontalResize() {
+  if (workspaceRef.value) {
+    workspaceHeight = workspaceRef.value.getBoundingClientRect().height;
+  }
+  window.addEventListener('pointermove', onHorizontalResize);
+  window.addEventListener('pointerup', stopResize);
+}
+
+function onHorizontalResize(e: PointerEvent) {
+  if (workspaceRef.value) {
+    const rect = workspaceRef.value.getBoundingClientRect();
+    // Toolbar is 50px high
+    const relativeY = e.clientY - rect.top;
+    const pct = (relativeY / workspaceHeight) * 100;
+    // Clamp editor height between 25% and 80%
+    editorHeight.value = Math.max(25, Math.min(80, pct));
+  }
+}
+
+function stopResize() {
+  window.removeEventListener('pointermove', onVerticalResize);
+  window.removeEventListener('pointermove', onHorizontalResize);
+  window.removeEventListener('pointerup', stopResize);
+  // Force Monaco to adjust container bounds layout
+  if (editorInstance) {
+    editorInstance.layout();
+  }
+}
+
+// ---------------- Database Sync File CRUD Operations ----------------
+
+async function fetchScripts() {
+  try {
+    const res = await authFetch('/api/scripts');
+    const data = await res.json();
+    if (data.scripts && data.scripts.length > 0) {
+      scriptsList.value = data.scripts;
+      
+      // Auto restore previous active script or load first
+      const savedActiveId = localStorage.getItem('playground_active_script_id');
+      const found = scriptsList.value.find(s => s.id === savedActiveId);
+      selectScript(found || scriptsList.value[0]);
+    }
+  } catch (err) {
+    addLog('error', 'Failed to load scripts list from backend.');
+  }
+}
+
+function selectScript(script: ScriptFile) {
+  activeScript.value = script;
+  localStorage.setItem('playground_active_script_id', script.id);
+  
+  // Load local cached version of this file if exists, otherwise load database code
+  const localCache = localStorage.getItem(`local_code_cache_${script.id}`);
+  activeCodeText.value = localCache !== null ? localCache : script.code;
+
+  if (editorInstance) {
+    editorInstance.setValue(activeCodeText.value);
+    
+    // Switch Monaco language model based on extension
+    const model = editorInstance.getModel();
+    if (model) {
+      const language = script.name.endsWith('.ts') ? 'typescript' : 'javascript';
+      monaco.editor.setModelLanguage(model, language);
+    }
+  }
+}
+
+async function createNewScript() {
+  const filename = prompt('Enter filename (must end with .ts or .js):', 'untitled.ts');
+  if (!filename) return;
+
+  const name = filename.trim();
+  if (name === '') return;
+
+  if (!name.endsWith('.ts') && !name.endsWith('.js')) {
+    alert('Filename must end with .ts or .js');
+    return;
+  }
+
+  try {
+    const res = await authFetch('/api/scripts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, code: GLOSSARY.defaultBotScript })
+    });
+    
+    const data = await res.json();
+    if (res.ok && data.script) {
+      scriptsList.value.push(data.script);
+      selectScript(data.script);
+      addLog('info', `File "${name}" created successfully.`);
+    } else {
+      alert(data.error || 'Failed to create script file.');
+    }
+  } catch (err: any) {
+    alert('Error connecting to backend API.');
+  }
+}
+
+async function renameScript(script: ScriptFile) {
+  const newName = prompt('Enter new filename:', script.name);
+  if (!newName) return;
+
+  const name = newName.trim();
+  if (name === '' || name === script.name) return;
+
+  if (!name.endsWith('.ts') && !name.endsWith('.js')) {
+    alert('Filename must end with .ts or .js');
+    return;
+  }
+
+  try {
+    const res = await authFetch(`/api/scripts/${script.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name })
+    });
+    
+    const data = await res.json();
+    if (res.ok && data.script) {
+      const idx = scriptsList.value.findIndex(s => s.id === script.id);
+      if (idx !== -1) {
+        scriptsList.value[idx].name = name;
+      }
+      addLog('info', `File renamed to "${name}".`);
+    } else {
+      alert(data.error || 'Failed to rename file.');
+    }
+  } catch (err) {
+    alert('Error connecting to backend API.');
+  }
+}
+
+async function deleteScript(script: ScriptFile) {
+  if (scriptsList.value.length <= 1) return;
+  
+  const confirmDel = confirm(`Are you sure you want to delete "${script.name}"?`);
+  if (!confirmDel) return;
+
+  try {
+    const res = await authFetch(`/api/scripts/${script.id}`, {
+      method: 'DELETE'
+    });
+    
+    if (res.ok) {
+      // Clean local caches
+      localStorage.removeItem(`local_code_cache_${script.id}`);
+      
+      const idx = scriptsList.value.findIndex(s => s.id === script.id);
+      if (idx !== -1) {
+        scriptsList.value.splice(idx, 1);
+      }
+      
+      // If deleted active, switch to first available
+      if (activeScript.value?.id === script.id) {
+        selectScript(scriptsList.value[0]);
+      }
+      addLog('info', `File "${script.name}" deleted successfully.`);
+    } else {
+      const data = await res.json();
+      alert(data.error || 'Failed to delete script.');
+    }
+  } catch (err) {
+    alert('Error connecting to backend API.');
+  }
+}
+
+// Save active file to database (Ctrl + S)
+async function saveActiveScript() {
+  if (!activeScript.value) return;
+
+  isSavingScript.value = true;
+  const currentCode = editorInstance ? editorInstance.getValue() : activeCodeText.value;
+
+  try {
+    const res = await authFetch(`/api/scripts/${activeScript.value.id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code: currentCode })
+    });
+    
+    const data = await res.json();
+    if (res.ok && data.script) {
+      // Update local array object
+      const idx = scriptsList.value.findIndex(s => s.id === activeScript.value!.id);
+      if (idx !== -1) {
+        scriptsList.value[idx].code = currentCode;
+      }
+      activeScript.value.code = currentCode;
+      
+      // Sync localstorage cache
+      localStorage.setItem(`local_code_cache_${activeScript.value.id}`, currentCode);
+      
+      addLog('info', `Script "${activeScript.value.name}" saved successfully to cloud database.`);
+    } else {
+      addLog('error', `Failed to save script: ${data.error}`);
+    }
+  } catch (err) {
+    addLog('error', 'Error synchronizing code file changes with database server.');
+  } finally {
+    isSavingScript.value = false;
+  }
+}
+
+// ---------------- Simulation Executable Triggers ----------------
+
+function loadRobotAndRunSimulation() {
+  isLoadingRobot.value = true;
+  authFetch('/api/robot')
+    .then(res => res.json())
+    .then(data => {
+      if (data.robot) {
+        robotLevels.value = {
+          bodyLevel: data.robot.bodyLevel,
+          batteryLevel: data.robot.batteryLevel,
+          brainLevel: data.robot.brainLevel,
+          engineLevel: data.robot.engineLevel,
+          steeringLevel: data.robot.steeringLevel
+        };
+      }
+    })
+    .catch(() => {
+      addLog('error', 'Failed to retrieve robot upgrades. Running level-1 hardware defaults.');
+    })
+    .finally(() => {
+      simInstance = new RobotSimulation(robotLevels.value);
+      maxHP.value = simInstance.maxHP;
+      maxBattery.value = simInstance.maxBattery;
+      
+      simInstance.onCollision = (evt) => {
+        // Log in unified metric units
+        const speedMS = evt.impactSpeed / 40;
+        const accelMS = evt.acceleration / 40;
+        addLog(
+          'error', 
+          `Collision with ${evt.wall} wall! Speed: ${speedMS.toFixed(2)}m/s | Accel: ${accelMS.toFixed(2)}m/s² | Damage: ${evt.damage} HP`
+        );
+        if (simInstance!.state.hp <= 0) {
+          addLog('error', 'Robot chassis structural integrity failed! Engine deactivated.');
+          isSimRunning.value = false;
+        }
+      };
+
+      updateReactiveStates();
+      isLoadingRobot.value = false;
+    });
+}
+
 function updateReactiveStates() {
   if (simInstance) {
     simState.value = { ...simInstance.state };
@@ -369,34 +631,12 @@ function updateReactiveStates() {
   }
 }
 
-// Sync Scrolling of Line Numbers
-function syncScroll() {
-  if (textareaRef.value && lineNumbersRef.value) {
-    lineNumbersRef.value.scrollTop = textareaRef.value.scrollTop;
-  }
-}
-
-// Insert indent tabs instead of changing text focus
-function insertTab() {
-  const el = textareaRef.value;
-  if (!el) return;
-  const start = el.selectionStart;
-  const end = el.selectionEnd;
-  const spaces = '  '; // 2 spaces for tab
-  userCode.value = userCode.value.substring(0, start) + spaces + userCode.value.substring(end);
-  // Reset cursor position
-  setTimeout(() => {
-    el.selectionStart = el.selectionEnd = start + spaces.length;
-  }, 0);
-}
-
-// Custom Local Console logs
+// Local Console logging wrapper
 function addLog(type: 'info' | 'error' | 'log', text: string) {
   const now = new Date();
   const timeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
   consoleLogs.value.push({ type, text, time: timeStr });
   
-  // Auto scroll console to bottom
   setTimeout(() => {
     if (consoleRef.value) {
       consoleRef.value.scrollTop = consoleRef.value.scrollHeight;
@@ -408,27 +648,20 @@ function clearLogs() {
   consoleLogs.value = [];
 }
 
-// Save Code to localstorage whenever edited
-watch(userCode, (newCode) => {
-  localStorage.setItem('playground_code', newCode);
-});
-
-// Compile and Execute Code
+// Compile & Execute script
 function startSimulation() {
   if (!simInstance) return;
 
-  // Clear previous outputs
   clearLogs();
 
-  // If robot is already dead, auto-reset it first
   if (simInstance.state.hp <= 0) {
     resetSimulation();
   }
 
-  addLog('info', 'Analyzing script syntax and uploading instruction sets...');
+  const currentCode = editorInstance ? editorInstance.getValue() : activeCodeText.value;
+  addLog('info', 'Compiling decision script logic...');
 
   try {
-    // Capture user logs using sandboxed console parameter
     const sandboxConsole = {
       log: (...args: any[]) => {
         const text = args.map(a => typeof a === 'object' ? JSON.stringify(a) : String(a)).join(' ');
@@ -444,33 +677,32 @@ function startSimulation() {
       }
     };
 
-    // Evaluates script body, binding a custom Console context and checking the presence of a 'think' function
+    // Evaluates script body, binding a custom Console context and checking think presence
     const factory = new Function('console', `
-      ${userCode.value};
+      ${currentCode};
       if (typeof think !== 'function') {
-        throw new Error("Function think(sensors) not found. Please ensure it is declared correctly.");
+        throw new Error("Function 'think(sensors)' not found. Make sure it is declared in the root scope.");
       }
       return think;
     `);
 
     const compiledFn = factory(sandboxConsole);
 
-    // Initial test call to verify execution outputs
+    // Initial output verification test
     const testSensors = simInstance.getSensors();
     const result = compiledFn(testSensors);
 
     if (!result || typeof result.throttle !== 'number' || typeof result.targetSteering !== 'number') {
-      throw new Error("The think function must return an object containing throttle and targetSteering numbers.");
+      throw new Error("The return value of think(sensors) must be an object like: { throttle: 0.8, targetSteering: 0 }");
     }
 
-    // Success! Bind Fn
     activeThinkFn = compiledFn;
     isSimRunning.value = true;
     lastFrameTime = performance.now();
-    addLog('info', 'Processor core loaded successfully. Simulation is running.');
+    addLog('info', 'Script model loaded. Simulation starting...');
   } catch (err: any) {
     isSimRunning.value = false;
-    addLog('error', `Compile/Syntax Error: ${err.message}`);
+    addLog('error', `Compilation Error: ${err.message}`);
   }
 }
 
@@ -497,12 +729,10 @@ function tick(time: number) {
     return;
   }
 
-  // Calculate elapsed time (limit delta to avoid physics explosion on background tabs)
   let dt = (time - lastFrameTime) / 1000;
   lastFrameTime = time;
   if (dt > 0.1) dt = 0.1;
 
-  // Run calculation steps at chosen speed multiplier
   const substeps = simSpeed.value;
   const dtStep = dt / substeps;
 
@@ -521,12 +751,11 @@ function tick(time: number) {
       const accel = (engineForce / simInstance.totalWeight) - (1.2 * simInstance.state.speed);
       activeAccel.value = accel;
 
-      // Move simulation step
+      // Update simulation step
       simInstance.step(dtStep, throttle, targetSteering);
 
-      // If battery died mid-step, notify
       if (simInstance.state.battery <= 0 && simInstance.state.speed === 0) {
-        addLog('error', 'Battery depleted. Simulation stopped.');
+        addLog('error', 'Battery fully depleted. Simulation stopped.');
         isSimRunning.value = false;
         break;
       }
@@ -534,499 +763,495 @@ function tick(time: number) {
     updateReactiveStates();
   } catch (err: any) {
     isSimRunning.value = false;
-    addLog('error', `Runtime error in think function: ${err.message}`);
+    addLog('error', `Runtime Error inside think(): ${err.message}`);
+  }
+}
+
+// Global keyboard listeners for shortcuts
+function handleGlobalKeys(e: KeyboardEvent) {
+  if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+    e.preventDefault();
+    saveActiveScript();
   }
 }
 
 // ---------------- Lifecycle Hooks ----------------
+
 onMounted(() => {
-  loadData();
+  loadRobotAndRunSimulation();
+  fetchScripts();
+  window.addEventListener('keydown', handleGlobalKeys);
+
+  // Initialize Monaco Editor inside Container Ref
+  if (editorContainerRef.value) {
+    editorInstance = monaco.editor.create(editorContainerRef.value, {
+      value: activeCodeText.value,
+      language: 'typescript',
+      theme: 'vs-dark',
+      automaticLayout: true,
+      fontSize: 13,
+      fontFamily: 'Consolas, "Courier New", monospace',
+      minimap: { enabled: false },
+      lineNumbers: 'on',
+      tabSize: 2,
+      cursorBlinking: 'smooth',
+      scrollbar: {
+        verticalScrollbarSize: 8,
+        horizontalScrollbarSize: 8
+      }
+    });
+
+    // Save changes to local component state (caches code)
+    editorInstance.onDidChangeModelContent(() => {
+      if (editorInstance && activeScript.value) {
+        const val = editorInstance.getValue();
+        activeCodeText.value = val;
+        localStorage.setItem(`local_code_cache_${activeScript.value.id}`, val);
+      }
+    });
+
+    // Monaco editor Ctrl+S Command injection
+    editorInstance.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
+      saveActiveScript();
+    });
+  }
+
   simFrameId = requestAnimationFrame(tick);
 });
 
 onUnmounted(() => {
+  window.removeEventListener('keydown', handleGlobalKeys);
   if (simFrameId !== null) {
     cancelAnimationFrame(simFrameId);
+  }
+  if (editorInstance) {
+    editorInstance.dispose();
   }
 });
 </script>
 
 <style scoped>
-.playground-container {
-  min-height: 100vh;
-  background-color: var(--bg-dark);
+/* Main Layout Workspace */
+.playground-layout {
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background-color: #020617;
   color: var(--text-primary);
-  display: flex;
-  flex-direction: column;
-}
-
-.playground-content {
-  flex: 1;
-  padding: 40px;
-  max-width: 1360px;
-  margin: 0 auto;
-  width: 100%;
-  box-sizing: border-box;
-}
-
-.playground-header {
-  margin-bottom: 30px;
-}
-
-.playground-header h1 {
-  font-size: 2.2rem;
-  margin: 0 0 8px 0;
-}
-
-.playground-header p {
-  color: var(--text-secondary);
-  margin: 0;
-}
-
-.playground-grid {
-  display: grid;
-  grid-template-columns: 600px 1fr;
-  gap: 32px;
-  align-items: start;
-}
-
-/* Left Panel: Simulator */
-.sim-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  padding: 24px;
-}
-
-/* Robot HUD Status Bars */
-.robot-hud {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  background: rgba(255, 255, 255, 0.02);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: var(--border-radius-sm);
-  padding: 16px;
-}
-
-.hud-item {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.hud-label {
-  font-size: 0.85rem;
-  color: var(--text-secondary);
-  width: 55px;
-  font-weight: 600;
-}
-
-.hud-bar-bg {
-  flex: 1;
-  height: 8px;
-  background: rgba(255, 255, 255, 0.08);
-  border-radius: 4px;
   overflow: hidden;
+  font-family: var(--font-family);
 }
 
-.hud-bar-fill {
-  height: 100%;
-  border-radius: 4px;
-  transition: width 0.1s linear;
-}
-
-.hp-fill {
-  background: linear-gradient(90deg, #ef4444, #f87171);
-  box-shadow: 0 0 10px rgba(239, 68, 68, 0.3);
-}
-
-.battery-fill {
-  background: linear-gradient(90deg, #3b82f6, #06b6d4);
-  box-shadow: 0 0 10px rgba(6, 182, 212, 0.3);
-}
-
-.hud-value {
-  font-size: 0.85rem;
-  font-family: monospace;
-  font-weight: 700;
-  width: 100px;
-  text-align: left;
-}
-
-.hud-row-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-  margin-top: 4px;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  padding-top: 12px;
-}
-
-.hud-sub-item {
+/* 1. Header Toolbar */
+.workspace-toolbar {
+  height: 50px;
+  background: #090d1a;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: rgba(255, 255, 255, 0.01);
-  padding: 6px 10px;
-  border-radius: 4px;
-  border: 1px solid rgba(255, 255, 255, 0.02);
+  padding: 0 16px;
+  z-index: 300;
+  box-sizing: border-box;
 }
 
-.hud-sub-item .hud-label {
-  font-size: 0.8rem;
-  width: auto;
+.toolbar-left,
+.toolbar-center,
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
-.hud-sub-item .hud-value {
-  width: auto;
-  font-size: 0.8rem;
+.workspace-title {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
 }
 
 .text-cyan {
   color: #06b6d4;
 }
 
-/* Simulation Controls */
-.sim-controls {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  padding-top: 16px;
+.toolbar-divider {
+  width: 1px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.1);
 }
 
-.control-buttons {
-  display: flex;
-  gap: 12px;
-}
-
-.control-buttons .btn {
-  flex: 1;
+/* Toolbar buttons */
+.btn-toolbar {
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--text-secondary);
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 10px;
-  padding: 12px 20px;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 0.8rem;
+  font-weight: 600;
   border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.btn-toolbar:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text-primary);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.btn-toolbar.active {
+  background: rgba(6, 182, 212, 0.08);
+  color: #06b6d4;
+  border-color: rgba(6, 182, 212, 0.2);
+}
+
+.btn-back {
+  background: rgba(239, 68, 68, 0.08);
+  color: #f87171;
+  border-color: rgba(239, 68, 68, 0.15);
+}
+
+.btn-back:hover {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ffffff;
+}
+
+.btn-save {
+  background: rgba(6, 182, 212, 0.08);
+  color: #06b6d4;
+  border-color: rgba(6, 182, 212, 0.15);
+}
+
+.btn-save:hover {
+  background: rgba(6, 182, 212, 0.15);
+  color: #ffffff;
+}
+
+/* Simulation Controls */
+.sim-btn-group {
+  display: flex;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--border-radius-sm);
+  overflow: hidden;
+}
+
+.btn-control {
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  font-size: 0.8rem;
   font-weight: 700;
   cursor: pointer;
   transition: var(--transition-fast);
-  border: none;
-  font-family: inherit;
+  border-right: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.btn-primary {
-  background: linear-gradient(135deg, #06b6d4, #0891b2);
-  color: #ffffff;
-  box-shadow: 0 4px 14px rgba(6, 182, 212, 0.2);
+.btn-control:last-child {
+  border-right: none;
 }
 
-.btn-primary:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(6, 182, 212, 0.35);
-}
-
-.btn-warning {
-  background: linear-gradient(135deg, #f59e0b, #d97706);
-  color: #ffffff;
-  box-shadow: 0 4px 14px rgba(245, 158, 11, 0.2);
-}
-
-.btn-warning:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(245, 158, 11, 0.35);
-}
-
-.btn-secondary {
-  background: rgba(255, 255, 255, 0.08);
+.btn-control:hover {
+  background: rgba(255, 255, 255, 0.03);
   color: var(--text-primary);
-  border: 1px solid rgba(255, 255, 255, 0.1) !important;
 }
 
-.btn-secondary:hover {
-  background: rgba(255, 255, 255, 0.12);
-  transform: translateY(-2px);
+.btn-play {
+  color: #4ade80;
+}
+.btn-play:hover {
+  background: rgba(74, 222, 128, 0.08);
 }
 
-.btn:active {
-  transform: translateY(0);
+.btn-pause {
+  color: #fbbf24;
+}
+.btn-pause:hover {
+  background: rgba(251, 191, 36, 0.08);
 }
 
+/* Speed selectors */
 .speed-selector {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  background: rgba(0, 0, 0, 0.2);
-  padding: 8px 16px;
-  border-radius: var(--border-radius-sm);
-  border: 1px solid rgba(255, 255, 255, 0.04);
+  gap: 6px;
 }
 
 .speed-label {
-  font-size: 0.85rem;
-  color: var(--text-secondary);
+  font-size: 0.75rem;
+  color: var(--text-muted);
 }
 
-.speed-btn-group {
+.speed-buttons {
   display: flex;
-  gap: 4px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: var(--border-radius-sm);
+  padding: 2px;
 }
 
 .speed-btn {
   background: transparent;
   border: none;
   color: var(--text-muted);
-  padding: 4px 12px;
-  border-radius: 4px;
-  font-size: 0.85rem;
-  font-weight: 600;
+  font-size: 0.75rem;
+  padding: 3px 8px;
+  border-radius: 3px;
   cursor: pointer;
   transition: var(--transition-fast);
+  font-weight: 700;
 }
 
 .speed-btn:hover {
   color: var(--text-primary);
-  background: rgba(255, 255, 255, 0.05);
 }
 
 .speed-btn.active {
-  background: var(--primary-glow);
-  color: #06b6d4;
-  border: 1px solid rgba(6, 182, 212, 0.2);
-}
-
-/* Right Panel: Editor & Logs */
-.editor-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-}
-
-/* Collapsible API Docs accordion */
-.docs-section {
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-  transition: max-height 0.3s ease-out;
-}
-
-.docs-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 20px;
-  cursor: pointer;
-  background: rgba(255, 255, 255, 0.01);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  user-select: none;
-}
-
-.docs-header-title {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-weight: 700;
-  font-size: 0.95rem;
-}
-
-.docs-header-title svg {
-  color: #06b6d4;
-}
-
-.arrow-icon {
-  color: var(--text-muted);
-  transition: transform 0.25s ease;
-}
-
-.arrow-icon.rotated {
-  transform: rotate(180deg);
-}
-
-.docs-content {
-  padding: 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  max-height: 240px;
-  overflow-y: auto;
-  background: rgba(0, 0, 0, 0.15);
-  font-size: 0.85rem;
-  border-top: 1px solid rgba(255, 255, 255, 0.02);
-}
-
-/* Custom docs scrollbar */
-.docs-content::-webkit-scrollbar {
-  width: 5px;
-}
-.docs-content::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 2px;
-}
-
-.docs-group h4 {
-  margin: 0 0 6px 0;
-  font-size: 0.9rem;
-  font-weight: 700;
-}
-
-.docs-list {
-  margin: 0;
-  padding-right: 18px;
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  color: var(--text-secondary);
-}
-
-.docs-list li code {
   background: rgba(6, 182, 212, 0.1);
   color: #06b6d4;
-  padding: 2px 5px;
-  border-radius: 3px;
-  font-family: monospace;
+  border: 1px solid rgba(6, 182, 212, 0.15);
 }
 
-/* Editor Section */
-.editor-section {
+/* 2. Workspace Layout Body */
+.workspace-body {
+  flex: 1;
   display: flex;
-  flex-direction: column;
-  padding: 20px;
-}
-
-.editor-toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 14px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-  padding-bottom: 10px;
-}
-
-.editor-toolbar h3 {
-  margin: 0;
-  font-size: 1.05rem;
-  font-weight: 700;
-}
-
-.editor-hint {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  font-family: monospace;
-}
-
-.code-editor-container {
-  display: grid;
-  grid-template-columns: 45px 1fr;
-  background: #020617;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: var(--border-radius-sm);
-  height: 350px;
-  overflow: hidden;
   position: relative;
+  overflow: hidden;
 }
 
-.line-numbers {
-  background: #090d1a;
-  border-right: 1px solid rgba(255, 255, 255, 0.06);
-  padding: 12px 0;
+/* Split Panes */
+.split-pane {
+  height: 100%;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  overflow-y: hidden;
-  user-select: none;
-}
-
-.line-number {
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 0.85rem;
-  color: rgba(255, 255, 255, 0.2);
-  line-height: 1.5;
-  height: 20px;
-}
-
-.code-textarea {
-  background: transparent;
-  border: none;
-  outline: none;
-  resize: none;
-  padding: 12px;
-  font-family: 'Courier New', Courier, monospace;
-  font-size: 0.85rem;
-  color: #cbd5e1;
-  line-height: 1.5;
-  white-space: pre;
-  overflow: auto;
-  tab-size: 2;
+  position: relative;
+  overflow: hidden;
   box-sizing: border-box;
-  width: 100%;
+}
+
+.pane-left {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  background-color: #050812;
+  border-right: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.pane-right {
+  flex-direction: column;
+  background-color: #090d1a;
+  border-left: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+/* Resizers */
+.resizer {
+  position: relative;
+  background: rgba(255, 255, 255, 0.04);
+  z-index: 100;
+  transition: background-color 0.2s;
+}
+
+.resizer:hover {
+  background-color: #06b6d4;
+}
+
+.vertical-resizer {
+  width: 4px;
+  cursor: col-resize;
   height: 100%;
 }
 
-.code-textarea::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
-}
-.code-textarea::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 4px;
+.horizontal-resizer {
+  height: 4px;
+  cursor: row-resize;
+  width: 100%;
 }
 
-/* Console logs area */
-.console-section {
+/* Explorer Sidebar */
+.explorer-sidebar {
+  border-right: 1px solid rgba(255, 255, 255, 0.06);
+  background: #04060f;
   display: flex;
   flex-direction: column;
-  padding: 20px;
+  overflow: hidden;
 }
 
-.console-header {
+.explorer-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.console-header h3 {
-  margin: 0;
-  font-size: 1rem;
+.explorer-title {
+  font-size: 0.7rem;
   font-weight: 700;
+  letter-spacing: 0.8px;
+  color: var(--text-secondary);
 }
 
-.clear-btn {
+.btn-new-file {
   background: transparent;
   border: none;
   color: var(--text-muted);
-  font-size: 0.8rem;
   cursor: pointer;
-  padding: 2px 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2px;
   border-radius: 4px;
   transition: var(--transition-fast);
 }
 
-.clear-btn:hover {
-  color: var(--text-primary);
+.btn-new-file:hover {
   background: rgba(255, 255, 255, 0.05);
+  color: #06b6d4;
 }
 
-.console-logs {
-  background: #020617;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: var(--border-radius-sm);
-  height: 140px;
+.explorer-files {
+  flex: 1;
   overflow-y: auto;
-  padding: 12px;
+  padding: 8px 6px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 2px;
+}
+
+.file-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 10px;
+  border-radius: var(--border-radius-sm);
+  cursor: pointer;
+  transition: var(--transition-fast);
+  color: var(--text-secondary);
+}
+
+.file-item:hover {
+  background: rgba(255, 255, 255, 0.02);
+  color: var(--text-primary);
+}
+
+.file-item.active {
+  background: rgba(6, 182, 212, 0.08);
+  color: #06b6d4;
+  border-left: 2px solid #06b6d4;
+  border-radius: 0 4px 4px 0;
+}
+
+.file-name-group {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-icon {
+  color: var(--text-muted);
+  flex-shrink: 0;
+}
+
+.file-item.active .file-icon {
+  color: #06b6d4;
+}
+
+.file-name {
+  font-size: 0.8rem;
+  font-weight: 500;
+}
+
+.btn-delete-file {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  display: none;
+  cursor: pointer;
+  padding: 2px;
+  border-radius: 4px;
+}
+
+.file-item:hover .btn-delete-file {
+  display: block;
+}
+
+.btn-delete-file:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #f87171;
+}
+
+/* 2D Arena Canvas Wrapper */
+.canvas-wrapper {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+/* Editor & Console panes */
+.editor-pane,
+.console-pane {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   box-sizing: border-box;
 }
 
-.console-logs::-webkit-scrollbar {
-  width: 6px;
+.pane-header {
+  height: 32px;
+  background: #070a14;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  box-sizing: border-box;
 }
-.console-logs::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
-  border-radius: 3px;
+
+.pane-title {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  color: var(--text-secondary);
+}
+
+.file-path {
+  font-size: 0.7rem;
+  margin-left: 12px;
+  font-family: monospace;
+}
+
+.monaco-host {
+  flex: 1;
+  overflow: hidden;
+  background-color: #1e1e1e; /* Monaco default dark */
+}
+
+/* Console logs */
+.console-header {
+  justify-content: space-between;
+  background: #050810;
+  border-top: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.console-logs {
+  flex: 1;
+  background: #03050b;
+  overflow-y: auto;
+  padding: 12px 16px;
+  box-sizing: border-box;
+  font-family: 'Consolas', monospace;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .console-placeholder {
@@ -1036,8 +1261,7 @@ onUnmounted(() => {
 }
 
 .console-line {
-  font-family: monospace;
-  font-size: 0.8rem;
+  font-size: 0.78rem;
   line-height: 1.4;
   white-space: pre-wrap;
   word-break: break-all;
@@ -1052,55 +1276,62 @@ onUnmounted(() => {
 }
 
 .console-line.log {
-  color: #e2e8f0;
+  color: #cbd5e1;
 }
 
 .log-time {
-  color: rgba(255, 255, 255, 0.25);
-  margin-right: 6px;
-  font-weight: 600;
+  color: rgba(255, 255, 255, 0.2);
+  margin-right: 8px;
 }
 
-/* Loading state */
+.clear-btn {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: var(--transition-fast);
+}
+
+.clear-btn:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+/* Loading skeleton */
 .loading-container {
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 80px;
-  text-align: center;
+  width: 100%;
+  height: 100%;
 }
 
 .spinner {
-  width: 40px;
-  height: 40px;
+  width: 32px;
+  height: 32px;
   border: 3px solid rgba(6, 182, 212, 0.15);
   border-radius: 50%;
   border-top-color: #06b6d4;
   animation: spin 1s linear infinite;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
 
-@media (max-width: 1200px) {
-  .playground-grid {
-    grid-template-columns: 1fr;
-    gap: 24px;
-  }
-  .sim-panel {
-    align-items: center;
-  }
-  .playground-canvas-container {
-    width: 100%;
-    max-width: 500px;
-  }
+/* Custom Scrollbars */
+.explorer-files::-webkit-scrollbar,
+.console-logs::-webkit-scrollbar {
+  width: 6px;
 }
-@media (max-width: 768px) {
-  .playground-content {
-    padding: 24px 16px;
-  }
+.explorer-files::-webkit-scrollbar-thumb,
+.console-logs::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 3px;
 }
 </style>

@@ -37,6 +37,12 @@ const routes = [
     meta: { requiresAuth: true },
   },
   {
+    path: '/docs',
+    name: 'Docs',
+    component: () => import('../views/Docs.vue'),
+    meta: { requiresAuth: true },
+  },
+  {
     path: '/:pathMatch(.*)*',
     redirect: '/',
   },

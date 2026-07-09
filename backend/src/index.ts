@@ -4,12 +4,17 @@ import dotenv from 'dotenv';
 import { connectDB, sequelize } from './db.js';
 import { User } from './models/User.js';
 import { Robot } from './models/Robot.js';
+import { Script } from './models/Script.js';
 import authRouter from './routes/auth.js';
 import robotRouter from './routes/robot.js';
+import scriptRouter from './routes/script.js';
 
 // Setup associations
 User.hasOne(Robot, { foreignKey: 'userId', as: 'robot' });
 Robot.belongsTo(User, { foreignKey: 'userId', as: 'user' });
+
+User.hasMany(Script, { foreignKey: 'userId', as: 'scripts' });
+Script.belongsTo(User, { foreignKey: 'userId', as: 'user' });
 
 dotenv.config();
 
@@ -23,6 +28,7 @@ app.use(express.json());
 // ---------- Routes ----------
 app.use('/api/auth', authRouter);
 app.use('/api/robot', robotRouter);
+app.use('/api/scripts', scriptRouter);
 
 app.get('/api/health', (_req, res) => {
   res.json({
@@ -42,7 +48,8 @@ app.get('/api', (_req, res) => {
       '/api/auth/register',
       '/api/auth/login',
       '/api/auth/me',
-      '/api/robot'
+      '/api/robot',
+      '/api/scripts'
     ],
   });
 });

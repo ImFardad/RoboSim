@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "@fontsource/vazirmatn": "^5.2.8",
+    "monaco-editor": "^0.55.1",
     "vue": "^3.5.38",
     "vue-router": "^4.6.4"
   },
