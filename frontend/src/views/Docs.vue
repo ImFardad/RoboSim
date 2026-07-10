@@ -1,7 +1,7 @@
 <template>
   <div class="docs-container">
     <!-- Navbar -->
-    <AppHeader @toggle-sidebar="isSidebarOpen = !isSidebarOpen" />
+    <AppHeader :activePageTitle="'DOCUMENTATION'" @toggle-sidebar="isSidebarOpen = !isSidebarOpen" />
 
     <!-- Sidebar Left Navigation Drawer -->
     <AppSidebar :isOpen="isSidebarOpen" @close="isSidebarOpen = false" activeMenu="docs" />

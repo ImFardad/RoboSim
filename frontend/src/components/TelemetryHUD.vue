@@ -1,15 +1,10 @@
 <template>
   <div 
     class="telemetry-hud glass-card" 
-    :style="{ transform: `translate(${posX}px, ${posY}px)` }"
+    :style="{ left: posX + 'px', top: posY + 'px' }"
   >
     <!-- Header serving as drag handle -->
-    <div 
-      class="hud-header" 
-      @pointerdown="startDrag"
-      @pointermove="onDrag"
-      @pointerup="stopDrag"
-    >
+    <div class="hud-header" @pointerdown="startDrag">
       <div class="hud-title">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
           <rect x="2" y="2" width="20" height="20" rx="2.18" ry="2.18"></rect>
@@ -131,13 +126,17 @@ let startPosX = 0;
 let startPosY = 0;
 
 function startDrag(e: PointerEvent) {
-  const el = e.currentTarget as HTMLElement;
-  el.setPointerCapture(e.pointerId);
+  // Prevent default scroll/text selections
+  e.preventDefault();
   isDragging = true;
   startX = e.clientX;
   startY = e.clientY;
   startPosX = posX.value;
   startPosY = posY.value;
+
+  // Add global window drag listeners
+  window.addEventListener('pointermove', onDrag);
+  window.addEventListener('pointerup', stopDrag);
 }
 
 function onDrag(e: PointerEvent) {
@@ -145,24 +144,21 @@ function onDrag(e: PointerEvent) {
   const dx = e.clientX - startX;
   const dy = e.clientY - startY;
 
-  // Update coords (clamp within viewport limits roughly)
   posX.value = startPosX + dx;
   posY.value = startPosY + dy;
 }
 
-function stopDrag(e: PointerEvent) {
+function stopDrag() {
   if (!isDragging) return;
-  const el = e.currentTarget as HTMLElement;
-  el.releasePointerCapture(e.pointerId);
   isDragging = false;
+  window.removeEventListener('pointermove', onDrag);
+  window.removeEventListener('pointerup', stopDrag);
 }
 </script>
 
 <style scoped>
 .telemetry-hud {
   position: absolute;
-  top: 0;
-  left: 0;
   width: 250px;
   z-index: 200;
   cursor: default;

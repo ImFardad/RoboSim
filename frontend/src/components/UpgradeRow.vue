@@ -98,12 +98,14 @@ defineEmits<{
 .comp-title-row :deep(svg) {
   color: var(--primary-color);
   flex-shrink: 0;
+  display: block;
 }
 
 .comp-title-row h3 {
   font-size: 15px;
   font-weight: 700;
   color: var(--text-primary);
+  margin: 0;
 }
 
 .comp-desc {

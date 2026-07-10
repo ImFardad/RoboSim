@@ -24,7 +24,7 @@
             <span>Cockpit</span>
           </button>
           <div class="toolbar-divider"></div>
-          <span class="workspace-title">Workspace: <strong class="text-cyan">{{ activeScript?.name || 'Loading...' }}</strong></span>
+          <span class="workspace-title">Workspace: <strong class="text-cyan">{{ activeScript?.name || 'Loading...' }}{{ isCodeDirty ? ' *' : '' }}</strong></span>
           <span v-if="isCodeDirty" class="dirty-indicator-badge">Unsaved Changes</span>
         </div>
 
@@ -78,7 +78,7 @@
             <span class="speed-label">Speed:</span>
             <div class="speed-buttons">
               <button 
-                v-for="multiplier in [1, 2, 4]" 
+                v-for="multiplier in [0.5, 1, 2, 4]" 
                 :key="multiplier"
                 :class="['speed-btn', { active: simSpeed === multiplier }]"
                 @click="simSpeed = multiplier"
@@ -160,7 +160,10 @@
                     <line x1="16" y1="17" x2="8" y2="17"></line>
                     <polyline points="10 9 9 9 8 9"></polyline>
                   </svg>
-                  <span class="file-name">{{ scr.name }}</span>
+                  <span class="file-name">
+                    {{ scr.name }}
+                    <span v-if="activeScript?.id === scr.id && isCodeDirty" class="dirty-star">*</span>
+                  </span>
                   <span v-if="activeScript?.id === scr.id && isCodeDirty" class="file-unsaved-dot" title="Unsaved changes"></span>
                 </div>
                 
@@ -914,8 +917,9 @@ function tick(time: number) {
   lastFrameTime = time;
   if (dt > 0.1) dt = 0.1;
 
-  const substeps = simSpeed.value;
-  const dtStep = dt / substeps;
+  const totalSimTime = dt * simSpeed.value;
+  const substeps = Math.max(1, Math.round(simSpeed.value));
+  const dtStep = totalSimTime / substeps;
 
   try {
     for (let s = 0; s < substeps; s++) {
@@ -1707,5 +1711,11 @@ onUnmounted(() => {
   border-radius: 50%;
   flex-shrink: 0;
   margin-left: auto;
+}
+
+.dirty-star {
+  color: #fbbf24;
+  margin-left: 4px;
+  font-weight: 700;
 }
 </style>

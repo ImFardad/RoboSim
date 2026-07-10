@@ -180,6 +180,7 @@ function showAlert(message: string) {
 .menu-item svg {
   color: var(--text-muted);
   transition: var(--transition-fast);
+  display: block;
 }
 
 .menu-item:hover svg,

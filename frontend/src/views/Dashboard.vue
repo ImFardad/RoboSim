@@ -97,7 +97,7 @@ function showFeatureAlert(message: string) {
 .dashboard-content {
   flex: 1;
   padding: 40px;
-  max-width: 1200px;
+  max-width: 1500px;
   margin: 0 auto;
   width: 100%;
 }

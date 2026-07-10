@@ -61,11 +61,12 @@ defineProps<{
   gap: 8px;
   font-size: 16px;
   font-weight: 700;
-  margin-bottom: 6px;
+  margin: 0 0 6px 0;
 }
 
 .section-title svg {
   color: var(--primary-color);
+  display: block;
 }
 
 .specs-grid {

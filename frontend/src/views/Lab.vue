@@ -414,7 +414,7 @@ onMounted(async () => {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 24px;
-  justify-items: center;
+  justify-items: stretch;
   margin: 0 auto;
   width: 100%;
   padding: 16px 0;
@@ -442,7 +442,7 @@ onMounted(async () => {
 .dashboard-content {
   flex: 1;
   padding: 40px;
-  max-width: 1200px;
+  max-width: 1500px;
   margin: 0 auto;
   width: 100%;
 }
