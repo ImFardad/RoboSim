@@ -361,6 +361,8 @@ const tabs = [
   padding: 30px;
   min-height: 500px;
   box-sizing: border-box;
+  max-width: none !important;
+  width: 100% !important;
 }
 
 .tab-pane h2 {

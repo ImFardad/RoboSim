@@ -25,7 +25,6 @@
           </button>
           <div class="toolbar-divider"></div>
           <span class="workspace-title">Workspace: <strong class="text-cyan">{{ activeScript?.name || 'Loading...' }}{{ isCodeDirty ? ' *' : '' }}</strong></span>
-          <span v-if="isCodeDirty" class="dirty-indicator-badge">Unsaved Changes</span>
         </div>
 
         <!-- Center: Simulation Controls -->
@@ -164,7 +163,6 @@
                     {{ scr.name }}
                     <span v-if="activeScript?.id === scr.id && isCodeDirty" class="dirty-star">*</span>
                   </span>
-                  <span v-if="activeScript?.id === scr.id && isCodeDirty" class="file-unsaved-dot" title="Unsaved changes"></span>
                 </div>
                 
                 <button 
@@ -190,20 +188,6 @@
               :state="simState" 
               :levels="robotLevels" 
               :sensors="sensorData" 
-            />
-
-            <!-- Draggable HUD overlay -->
-            <TelemetryHUD 
-              v-if="isHudVisible && !isLoadingRobot"
-              :hp="simState.hp"
-              :maxHP="maxHP"
-              :battery="simState.battery"
-              :maxBattery="maxBattery"
-              :speed="simState.speed"
-              :accel="activeAccel"
-              :steeringAngle="simState.steeringAngle"
-              :wallDistance="sensorData.wallDistance"
-              @close="isHudVisible = false"
             />
           </div>
 
@@ -252,6 +236,19 @@
 
         </div>
 
+        <!-- Draggable HUD overlay -->
+        <TelemetryHUD 
+          v-if="isHudVisible && !isLoadingRobot"
+          :hp="simState.hp"
+          :maxHP="maxHP"
+          :battery="simState.battery"
+          :maxBattery="maxBattery"
+          :speed="simState.speed"
+          :accel="activeAccel"
+          :steeringAngle="simState.steeringAngle"
+          :wallDistance="sensorData.wallDistance"
+          @close="isHudVisible = false"
+        />
       </div>
 
     </div>

@@ -435,6 +435,11 @@ onMounted(async () => {
 }
 
 /* ---------------- Config Panel ---------------- */
+:deep(.glass-card) {
+  max-width: none !important;
+  width: 100% !important;
+}
+
 .configs-card {
   padding: 8px 24px;
 }

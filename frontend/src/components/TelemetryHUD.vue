@@ -160,7 +160,7 @@ function stopDrag() {
 .telemetry-hud {
   position: absolute;
   width: 250px;
-  z-index: 200;
+  z-index: 999;
   cursor: default;
   padding: 0;
   overflow: hidden;
