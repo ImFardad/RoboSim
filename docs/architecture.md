@@ -1,308 +1,205 @@
-# 🏗 معماری RoboSim
+# 🏗 RoboSim Architecture
 
-مرجع رسمی طراحی و معماری پروژه‌ی **RoboSim** — پلتفرم مسابقات ربات‌های برنامه‌نویسی‌شونده.
+Official design and architectural reference for the **RoboSim** platform — a deterministic, programming-competition simulation environment where commanders code the "brains" of their robots in TypeScript to compete in a 2D arena.
 
-این مستند در طول توسعه به‌روزرسانی می‌شود و شامل اهداف، تصمیمات معماری، تکنولوژی‌ها، ساختار پروژه و نقشه‌ی راه است.
-
----
-
-## فهرست
-
-1. [معرفی پروژه](#۱-معرفی-پروژه)
-2. [اهداف](#۲-اهداف)
-3. [تصمیمات کلیدی طراحی](#۳-تصمیمات-کلیدی-طراحی)
-4. [تکنولوژی‌ها و دلیل انتخاب](#۴-تکنولوژی‌ها-و-دلیل-انتخاب)
-5. [ساختار پروژه](#۵-ساختار-پروژه)
-6. [آنچه تا کنون انجام شده (فاز ۱)](#۶-آنچه-تا-کنون-انجام-شده-فاز-۱)
-7. [معماری هدف](#۷-معماری-هدف)
-8. [نحوه‌ی اجرا](#۸-نحوه‌ی-اجرا)
-9. [نقشه‌ی راه](#۹-نقشه‌ی-راه)
+This document is maintained dynamically throughout the development lifecycle to record system blueprints, architecture decisions, technology stacks, project structure, and the overall roadmap.
 
 ---
 
-## ۱. معرفی پروژه
+## Table of Contents
 
-**RoboSim** یک محیط شبیه‌سازی برای برگزاری مسابقات ربات‌هاست. شرکت‌کنندگان «مغز» ربات‌های خود را با برنامه‌نویسی می‌سازند و آن‌ها را در یک میدان نبرد دو‌بعدی به رقابت می‌گذارند.
-
-ایده‌ی این پروژه با الهام از بازی‌های برنامه‌نویسی معروفی چون **Robocode**، **Battlecode**، **Halite** و **Core War** شکل گرفته است.
-
----
-
-## ۲. اهداف
-
-### اهداف اصلی
-
-| # | هدف | توضیح |
-|---|-----|-------|
-| ۱ | **محیط شبیه‌سازی نبرد ربات‌ها** | میدان نبرد دو‌بعدی (Top-down) که ربات‌ها در آن می‌جنگند. |
-| ۲ | **برنامه‌نویسی‌پذیری مغز ربات** | شرکت‌کنندگان با کدنویسی، هوش مصنوعی ربات خود را می‌سازند. |
-| ۳ | **پلتفرم مسابقه آنلاین** | آپلود کد، اجرای مسابقه، ثبت باز‌پخش (Replay) و رتبه‌بندی. |
-| ۴ | **عادلانه و قطعی (Deterministic)** | نتایج قابل بازتولید و غیرقابل‌تقلب. |
-
-### اصول راهنما
-
-- **استقلال کامل از وابستگی‌های خارجی در زمان اجرا** — هیچ CDN، API خارجی یا سرویس آنلاین (مانند Google Fonts) در زمان اجرا استفاده نمی‌شود. همه‌چیز (از جمله فونت‌ها) به‌صورت محلی نصب می‌شود.
-- **سادگی و سرعت توسعه** — انتخاب ابزارهایی که توسعه را سریع و لذت‌بخش کنند.
-- **جداسازی منطق از نمایش** — موتور شبیه‌سازی باید مستقل از رابط کاربری باشد تا هم در مرورگر و هم در سرور اجرا شود.
+1. [Project Overview](#1-project-overview)
+2. [Platform Objectives](#2-platform-objectives)
+3. [Key Architectural Decisions](#3-key-architectural-decisions)
+4. [Technology Stack](#4-technology-stack)
+5. [Project Structure](#5-project-structure)
+6. [Completed Features (Phases 1-3)](#6-completed-features-phases-1-3)
+7. [Target Architecture](#7-target-architecture)
+8. [Setup & Running Instructions](#8-setup--running-instructions)
+9. [Development Roadmap](#9-development-roadmap)
 
 ---
 
-## ۳. تصمیمات کلیدی طراحی
+## 1. Project Overview
 
-این تصمیمات در فاز ایده‌پردازی و با مشورت گرفته شده‌اند و ستون فقرات معماری پروژه را تشکیل می‌دهند.
+**RoboSim** is a programming-game simulation platform. Commanders design and upload modular robot hardware upgrades and write autonomous decision logic scripts in TypeScript. The scripts run in a local sandbox to control the steering, propulsion, and scans of their robot in a top-down, discrete 2D arena.
 
-| موضوع | تصمیم | دلیل |
-|-------|-------|------|
-| **سبک محیط** | دو‌بعدی از بالا (Top-down 2D) | ساده، سریع، اجرای آسان در مرورگر |
-| **مدل زمانی** | تیک‌محور گسسته (Tick-based) | تعادل بین روان بودن و سادگی، رایج‌ترین مدل |
-| **زبان ربات‌ها** | TypeScript (همان زبان موتور) | یکپارچگی، سادگی، عدم نیاز به پروتکل واسط |
-| **پلتفرم** | وب (مرورگر) | اشتراک‌گذاری آسان، دسترسی گسترده |
-| **مکانیک بازی** | سبک Robocode (حرکت، اسلحه، رادار، HP/انرژی) | اثبات‌شده، غنی، آموزشی |
-| **فرمت مسابقه** | انعطاف‌پذیر ۱ تا N ربات | پشتیبانی از دوئل و نبردهای چندنفره |
-| **قطعیت** | موتور کاملاً Deterministic | امکان Replay، تأیید سمت سرور، دیباگ دقیق |
-| **سندباکس کد** | رابط محدود (`BotInterface`) | مرز امنیتی واضح، قابل انتقال به Web Worker در آینده |
-
-### سبک بصری و رابط کاربری
-
-- **راست‌چین و فارسی** — تمام رابط کاربری به زبان فارسی و راست‌چین (RTL) است.
-- **فونت Vazirmatn** — به‌صورت کاملاً محلی (پکیج `@fontsource/vazirmatn`) نصب شده، بدون هیچ وابستگی به CDN.
+The platform draws inspiration from games like **Robocode**, **Battlecode**, **Halite**, and **Core War**.
 
 ---
 
-## ۴. تکنولوژی‌ها و دلیل انتخاب
+## 2. Platform Objectives
+
+### Core Goals
+
+| # | Goal | Description |
+|---|-----|-------------|
+| 1 | **2D Battle Arena** | Top-down physical environment where robots navigate, scan, and compete. |
+| 2 | **Programmable Decision Scripts** | Commanders code autonomous logic scripts to control robot actuators. |
+| 3 | **Online Tournament Platform** | Code uploads, server-side match execution, replay logs, and rankings. |
+| 4 | **100% Deterministic Engine** | Fully reproducible match runs using a seeded PRNG for replay integrity. |
+
+### Design Guidelines
+*   **Zero External Dependencies at Runtime**: No external CDNs, fonts, or third-party APIs are loaded during runtime. Everything (including typography) is hosted locally.
+*   **Separation of Engine from Visuals**: The physics simulation engine is decoupled from the DOM. It can run in the browser canvas or as a headless CLI process in Node.js.
+*   **High Aesthetics**: Sleek dark-mode dashboard interfaces utilizing glassmorphism cards, micro-animations, custom input validation modals, and draggable elements.
+
+---
+
+## 3. Key Architectural Decisions
+
+| Area | Decision | Rationale |
+|------|----------|-----------|
+| **Arena Dimension** | 2D Top-down Canvas | Simplicity, high render performance in browsers. |
+| **Time Model** | Discrete Tick-based (60 ticks/s) | Balances smooth physics with simple state delta tracking. |
+| **Robot Language** | TypeScript / JavaScript | Shared with the core codebase, quick learning curve, easy sandbox integration. |
+| **قطعیت (Determinism)** | Seeded mulberry32 PRNG | Allows compact replay logs (Seed + Code) and server validation. |
+| **Script Sandbox** | Context-bound Function (`think(sensors)`) | Secure execution environment. Can be migrated to a Web Worker context. |
+
+---
+
+## 4. Technology Stack
 
 ### Frontend
-
-| تکنولوژی | دلیل انتخاب |
-|----------|-------------|
-| **Vue 3** | فریم‌ورک پیشنهادی کاربر، رابط Composition API مدرن |
-| **Vite** | سرعت بالا، HMR، پشتیبانی عالی TypeScript |
-| **TypeScript** | یکپارچگی با زبان ربات‌ها و موتور شبیه‌سازی |
-| **@fontsource/vazirmatn** | فونت محلی فارسی بدون CDN |
+*   **Vue 3**: Composition API (reactive script setups) for modular layout structures.
+*   **Vite**: Rapid hot-module reloading and bundling.
+*   **TypeScript**: Static analysis and type safety for both app components and user scripts.
+*   **@fontsource/vazirmatn**: Local typography bundle for clean layout styling.
+*   **Monaco Editor**: Integrated code editor providing syntax highlighting, auto-completion, and command bindings (Ctrl+S saving).
 
 ### Backend
-
-| تکنولوژی | دلیل انتخاب |
-|----------|-------------|
-| **Express.js 5** | فریم‌ورک سبک و محبوب، مطابق درخواست |
-| **TypeScript** | یکپارچگی با کل پروژه |
-| **tsx** | اجرای مستقیم TS در حالت توسعه با reload خودکار |
-| **cors** | اجازه‌ی درخواست از فرانت‌اند در توسعه |
-
-### ابزارهای مشترک
-
-| ابزار | کاربرد |
-|-------|--------|
-| **Git** | کنترل نسخه، میزبانی روی GitHub |
-| **npm** | مدیریت بسته‌ها |
-| **ESLint** *(در حال افزوده‌شدن)* | کیفیت کد |
-| **Vitest** *(در حال افزوده‌شدن)* | تست‌نویسی |
+*   **Express.js 5**: High-performance routing framework.
+*   **Sequelize ORM**: Connects to an **SQLite** database storing credentials, robot specs, and script codes.
+*   **bcryptjs & JWT**: Secure password hashing and token-based API authentication.
 
 ---
 
-## ۵. ساختار پروژه
-
-این پروژه از معماری **مونورپو (Monorepo) سبک** پیروی می‌کند — هر بخش استقلال نسبی دارد.
+## 5. Project Structure
 
 ```
 RoboSim/
-├── frontend/                  # رابط کاربری — Vue 3 + Vite + TS
+├── frontend/                  # SPA Client (Vue 3 + Vite + TypeScript)
 │   ├── public/
-│   │   └── favicon.svg        # favicon اختصاصی (لوگوی ربات)
+│   │   ├── avatars/           # Origami robot profiles
+│   │   └── favicon.svg        # Robot favicon
 │   ├── src/
-│   │   ├── components/
-│   │   │   └── TheWelcome.vue # کامپوننت خوش‌آمد + بررسی اتصال به سرور
-│   │   ├── App.vue            # کامپوننت ریشه
-│   │   ├── main.ts            # نقطه ورود + بارگذاری فونت محلی
-│   │   └── style.css          # استایل‌های سراسری
-│   ├── index.html             # HTML ریشه (RTL، زبان فارسی)
-│   ├── tsconfig.json          # پیکربندی TypeScript
-│   └── vite.config.ts         # پیکربندی Vite
+│   │   ├── components/        # Reusable UI widgets (Toast, AppHeader, AppSidebar, TelemetryHUD)
+│   │   ├── router/            # Vue Router with authenticated view guards
+│   │   ├── utils/             # auth logic, simulation math, API fetch utilities
+│   │   ├── views/             # Views (Login, Register, Dashboard, Lab, Docs, Playground)
+│   │   ├── App.vue            # Layout root with session bootsrap
+│   │   └── main.ts            # App initializer
+│   └── index.html
 │
-├── backend/                   # سرور و API — Express + TS
+├── backend/                   # API Server (Express.js 5 + TS + SQLite)
 │   ├── src/
-│   │   └── index.ts           # سرور Express + route‌ها
-│   ├── .env.example           # نمونه متغیرهای محیطی
-│   ├── tsconfig.json          # پیکربندی TypeScript
+│   │   ├── db.ts              # SQLite database configuration
+│   │   ├── index.ts           # Server start, cors, health, script routes
+│   │   ├── middleware/        # JWT validation layers
+│   │   ├── models/            # Database schema (User, Robot, Script)
+│   │   └── routes/            # REST routes (auth, robot, scripts)
+│   ├── database.sqlite        # Active local database instance
 │   └── package.json
 │
-├── docs/                      # مستندات
-│   └── architecture.md        # همین فایل
+├── docs/                      # Technical Documentation
+│   ├── architecture.md        # This file (English Architecture Blueprint)
+│   ├── auth-system.md         # API Authentication Specifications
+│   ├── robot-lab.md           # Robot Laboratory upgrade specs and formulas
+│   └── robot-system.md        # Robot Model and Upgrade APIs
 │
-├── .gitignore                 # نادیده‌گیری فایل‌های Node، build، env
-├── .gitattributes             # نرمال‌سازی line-ending (LF) بین پلتفرم‌ها
-└── README.md                  # معرفی و راه‌اندازی پروژه
+└── README.md                  # Main developer guide
 ```
 
 ---
 
-## ۶. آنچه تا کنون انجام شده (فاز ۱)
+## 6. Completed Features (Phases 1-3)
 
-فاز اول پروژه (Scaffold) به‌طور کامل انجام و با موفقیت روی ریپوی [`github.com/ImFardad/RoboSim`](https://github.com/ImFardad/RoboSim) push شده است.
+### ✅ Authentication & Session Guards
+*   Local database persistence utilizing SQLite and Sequelize.
+*   Secure JWT-based login, signup, and validation flows.
+*   Premium login card with real-time password strength algorithms.
+*   Router route guards preventing unauthorized navigation.
 
-### ✅ راه‌اندازی پروژه و کنترل نسخه
+### ✅ Brain Laboratory (Robot Assembly Lab)
+*   Modular upgrades (Body, Battery, Brain, Engine, Steering) with customized specs.
+*   Interactive 2D Canvas rendering the active robot color, wheel deflection, and steering lag.
+*   Dynamic mass, acceleration, top speed, and power drain formula engines.
+*   Glassmorphic UI cards stretching to full screen width with aligned headings.
 
-- [x] راه‌اندازی Git و اتصال به ریپوی ریموت `RoboSim`
-- [x] ایجاد ساختار مونورپو با پوشه‌های `frontend/`، `backend/` و `docs/`
-- [x] ایجاد `.gitignore` و `.gitattributes` در ریشه
-- [x] نوشتن `README.md` ریشه با معرفی و راه‌اندازی
-
-### ✅ Frontend (Vue 3 + Vite + TS)
-
-- [x] Scaffold پروژه با Vite (قالب `vue-ts`)
-- [x] نصب وابستگی‌ها و build موفق بدون خطا
-- [x] **نصب محلی فونت Vazirmatn** (بدون CDN/API) — شامل نسخه‌های عربی/فارسی و latin
-- [x] راست‌چین‌سازی رابط کاربری (`dir="rtl"`, `lang="fa"`)
-- [x] ساخت favicon اختصاصی با تم ربات
-- [x] پاک‌سازی فایل‌های پیش‌فرض Vite (Hero, Vue logo, ...)
-- [x] ساخت کامپوننت `TheWelcome` با دکمه‌ی «بررسی اتصال به سرور»
-- [x] نوشتن `README.md` مخصوص فرانت‌اند
-
-### ✅ Backend (Express + TS)
-
-- [x] راه‌اندازی دستی با Express 5 + TypeScript
-- [x] نصب وابستگی‌ها (`express`, `cors`, `tsx`, `@types/*`)
-- [x] ساخت سرور با endpoint‌های:
-  - `GET /api` — اطلاعات API و فهرست endpoint‌ها
-  - `GET /api/health` — بررسی سلامت سرور
-- [x] typecheck و build موفق بدون خطا
-- [x] تست عملی سرور — هر دو endpoint پاسخ صحیح می‌دهند
-- [x] ایجاد `.env.example` و `README.md` مخصوص بک‌اند
-
-### ✅ مستندات
-
-- [x] ایجاد پوشه‌ی `docs/` و فایل `architecture.md`
-- [x] ایجاد فایل `docs/auth-system.md` جهت مستندسازی سیستم احراز هویت
-- [x] ایجاد فایل `docs/robot-lab.md` جهت فرمول‌نویسی و طراحی فیزیک و مصرف باتری ربات‌ها
-- [x] ایجاد فایل `docs/robot-system.md` جهت مستندسازی مدل‌ها و APIهای آزمایشگاه ربات
-
-### ✅ سیستم احراز هویت و امنیت
-
-- [x] راه‌اندازی دیتابیس محلی SQLite با استفاده از Sequelize ORM
-- [x] پیاده‌سازی مدل `User` با هشینگ پسورد با bcrypt
-- [x] راه‌اندازی میان‌افزار احراز هویت JWT (Token-based authentication)
-- [x] پیاده‌سازی APIهای ثبت‌نام، ورود، گرفتن اطلاعات Commander و تغییر آواتار ربات اوریگامی
-- [x] طراحی سیستم پیغام‌های پویای Toast متصل به پاسخ‌های سرور
-- [x] پیاده‌سازی گارد مسیرهای Router فرانت‌اند برای دسترسی ایمن به داشبورد و آزمایشگاه
-
-### ✅ آزمایشگاه ساخت ربات - Brain Laboratory
-
-- [x] پیاده‌سازی مدل دیتابیس `Robot` و برقراری ارتباط یک‌به‌یک با فرمانده
-- [x] توسعه‌ی سرویس‌های REST API برای خواندن (`GET /api/robot`) و به‌روزرسانی (`PUT /api/robot`) سطوح قطعات ربات
-- [x] طراحی رابط کاربری تاریک و مدرن (Dark Glassmorphic) در نمای `/lab`
-- [x] پیاده‌سازی بوم رندرینگ ۲ بعدی Canvas با شبیه‌ساز انیمیشنی بدنه، چرخ‌های متحرک و پردازنده‌ی مرکزی درخشان ربات
-- [x] پیاده‌سازی قوانین فیزیکی و توان شبیه‌ساز زاویه گردش چرخ جلو با شبیه‌سازی تاخیر فیزیکی گردش فرمان
-- [x] پیاده‌سازی فرمول‌های محاسبه جرم، مقاومت شاسی، انرژی باتری، شتاب، سرعت نهایی و زمان اجرای تسک‌های همزمان
+### ✅ Monaco Scripting Playground (Arena)
+*   **File Explorer Sidebar**: SQLite-backed script listing with file create, rename, and delete options.
+*   **Monaco Code Editor**: Full code editing panel with TypeScript validation, autocomplete, and local caching.
+*   **Dirty Star Indicators**: Star marker `*` displayed next to script names in the explorer tree and header workspace title if modifications are unsaved.
+*   **Glassmorphic Confirm Dialogs**: Replaces default browser alerts/prompts with dark blurred modals checking for unsaved edits.
+*   **Telemetry HUD**: Floating HUD overlay showing real-time speed (m/s), acceleration (m/s²), chassis health (HP), energy units (EU), and distance scanner readouts (m). Binds drag-and-drop actions to pointer move listeners.
+*   **Tick Physics Loop**: Supports slow-motion and high-speed simulation speed multipliers (0.5x, 1x, 2x, 4x) running on correct physics substeps.
 
 ---
 
-## ۷. معماری هدف
-
-معماری نهایی پروژه (که در فازهای بعدی محقق می‌شود) از سه بخش اصلی تشکیل می‌گردد:
+## 7. Target Architecture
 
 ```
 ┌─────────────────────────────────────────────────────┐
 │  Browser (UI + Canvas Renderer)                      │
-│   • نمایش میدون نبرد ۲D                              │
-│   • کنترل مسابقه (شروع/توقف/سرعت)                    │
-│   • ادیتور کد برای نوشتن مغز ربات                    │
+│   • Displays 2D Arena & visualizes raycasts.        │
+│   • Manages simulation state controls (Speed).      │
+│   • Monaco Code editor for script programming.      │
 └──────────────┬──────────────────────────────────────┘
-               │ HTTP / WebSocket
+               │ HTTP / SQLite Sync
 ┌──────────────▼──────────────────────────────────────┐
 │  Backend (Express)                                   │
-│   • مدیریت ربات‌ها، کاربران و مسابقات                │
-│   • اجرای موتور شبیه‌سازی به‌صورت headless           │
-│   • ذخیره‌ی Replay و رتبه‌بندی                       │
+│   • Syncs robot upgrades and script buffers.        │
+│   • Headless execution of matches.                  │
+│   • Stores match logs and player rankings.          │
 └──────────────┬──────────────────────────────────────┘
                │
 ┌──────────────▼──────────────────────────────────────┐
 │  Simulation Engine (sim-core)                        │
-│   ⭐ خالص، بدون DOM، قابل اجرا در Node و Browser     │
-│   • Tick loop گسسته + PRNG قطعی                      │
-│   • فیزیک، برخورد، خط لبه‌ی دید (FOV)               │
-│   • سیستم HP/انرژی/اسکن                             │
+│   ⭐ DOM-free, runnable in both Node.js & browser.   │
+│   • Discrete tick calculations + seeded PRNG.       │
+│   • Bicycle kinematic physics and wall collisions.  │
+│   • HP Integrity & EU Battery core systems.         │
 └─────────────────────────────────────────────────────┘
 ```
 
-### اصل حیاتی: قطعیت (Determinism)
-
-موتور شبیه‌سازی باید **کاملاً قطعی** باشد:
-
-- استفاده از PRNG قطعی (مانند `mulberry32`) با seed ذخیره‌شده
-- عدم وابستگی به `Math.random`، `Date.now` یا ترتیب نامعلوم
-- ترتیب ثابت آپدیت ربات‌ها (بر اساس id مرتب‌شده)
-
-**مزایا:**
-
-- 🎥 **Replay کم‌حجم** — تنها با seed + کد ربات‌ها، کل مسابقه قابل بازتولید است.
-- 🔒 **تأیید سمت سرور** — موتور در Node به‌صورت headless اجرا می‌شود تا نتیجه عادلانه و غیرقابل‌تقلب باشد.
-- 🐛 **دیباگ دقیق** — هر مسابقه‌ای تیک‌به‌تیک قابل بازتولید است.
-
-### جداسازی منطق از نمایش
-
-```
-sim-core (engine)  ←  خالص (logic)، بدون DOM
-   ↓ snapshots (GameState)
-renderer (Canvas)  ←  فقط نمایش
-```
-
-این جداسازی باعث می‌شود موتور هم در مرورگر (با تصویر) و هم در سرور (headless، برای محاسبه‌ی رتبه‌بندی و replay) اجرا شود.
-
-### رابط مغز ربات (BotInterface)
-
-```typescript
-export abstract class Bot {
-  abstract think(s: Sensors): Action;  // هر تیک صدا زده می‌شود
-  onScannedRobot?(e: ScannedRobot): void;   // رویداد رادار
-  onHitByBullet?(e: HitEvent): void;
-  onHitWall?(e: WallEvent): void;
-  onDeath?(): void;
-}
-```
-
-شرکت‌کنندگان این کلاس را extend می‌کنند و منطق ربات خود را در `think()` می‌نویسند. ربات‌ها تنها از طریق ورودی `Sensors` (read-only) و خروجی `Action` با دنیا تعامل دارند — هیچ دسترسی مستقیمی به موتور یا DOM ندارند.
-
 ---
 
-## ۸. نحوه‌ی اجرا
+## 8. Setup & Running Instructions
 
-### پیش‌نیازها
+### Prerequisites
+*   Node.js v18 or higher
+*   npm v9 or higher
 
-- [Node.js](https://nodejs.org/) نسخه‌ی ۱۸ یا بالاتر
-- [npm](https://www.npmjs.com/)
-
-### اجرای Backend
-
+### Running Backend
 ```bash
 cd backend
 npm install
-npm run dev      # سرور روی http://localhost:3000
+npm run dev
 ```
+*Runs at `http://localhost:3000` and creates `database.sqlite` automatically.*
 
-### اجرای Frontend
-
+### Running Frontend
 ```bash
 cd frontend
 npm install
-npm run dev      # رابط کاربری روی http://localhost:5173
+npm run dev
 ```
-
-> در صفحه‌ی فرانت‌اند، دکمه‌ی «بررسی اتصال به سرور» وضعیت اتصال به backend را نشان می‌دهد.
-
----
-
-## ۹. نقشه‌ی راه
-
-- [x] **فاز ۱** — Scaffold اولیه (frontend، backend، docs) ✅
-- [x] **فاز ۲** — سیستم احراز هویت، نشست‌ها، آواتار و گارد مسیرها ✅
-- [x] **فاز ۳** — آزمایشگاه ساخت ربات (Brain Laboratory)، کانواس شبیه‌ساز گردش فرمان، فیزیک جرم/قدرت موتور، مصرف باتری و ذخیره دیتابیس ✅
-- [ ] **فاز ۴** — طراحی و پیاده‌سازی موتور شبیه‌سازی خالص (sim-core)
-  - [ ] تعریف types و config بازی
-  - [ ] فیزیک، برخورد، tick loop
-  - [ ] PRNG قطعی
-  - [ ] ربات‌های نمونه (SittingDuck، Spinner، Wanderer، Tracker)
-- [ ] **فاز ۵** — سیستم مسابقه، رکوردهای Replay و میدان نبرد آنلاین
+*Runs at `http://localhost:5173`.*
 
 ---
 
-> آخرین به‌روزرسانی: فاز ۳ (آزمایشگاه ساخت ربات) — ژوئن ۲۰۲۶
+## 9. Development Roadmap
+
+- [x] **Phase 1** — Monorepo Scaffolding (frontend, backend, docs)
+- [x] **Phase 2** — Authentication & Session Guards
+- [x] **Phase 3** — Brain Laboratory (Robot Canvas & upgraded physics formulas)
+- [x] **Phase 3.5** — Scripting Playground (Monaco, file tree, HUD overlay, glassmorphic modals)
+- [ ] **Phase 4** — Platform Simulation Engine (sim-core)
+  - [ ] Game types & multiplayer configs.
+  - [ ] Weapon subsystems & target scanning radars.
+  - [ ] Built-in combat bot scripts (sitting ducks, spinner bots, trackers).
+- [ ] **Phase 5** — Tournament matchmaking, rankings, and replay viewer.
+
+---
+
+*Last Updated: July 2026 - Phase 3.5 Completed*
